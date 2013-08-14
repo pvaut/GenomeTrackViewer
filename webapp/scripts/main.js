@@ -37,7 +37,7 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
 
 
             // Initialise all the views in the application
-            Intro.init();
+            //Intro.init();
             GenomeBrowser.init();
             TableViewer.init();
 
@@ -55,35 +55,23 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
             Application.customInitFunction = function(proceedFunction) {
                 // Here, we will fetch the full data of a couple of tables on the servers proactively
                 var getter = DataFetchers.ServerDataGetter();//Instantiate the fetcher object
-                if (MetaData.showClusterData) {
-                    // Declare a first table for fetching
-                    getter.addTable(
-                        'clustersites',                             // Name of the database table
-                        [                                           // List of table columns (can be just names, or an object specifying id:column_name, tpe: data_type
-                            'ID',
-                            { id: 'Latitude', tpe: 'float' },
-                            { id: 'Longitude', tpe: 'float' },
-                            'Name'
-                        ],
-                        'ID'                                        // Column used for sorting the records
-                    );
-                    // Declare a second table for fetching
-                    getter.addTable(
-                        'clustermembercount',
-                        ['ID', { id: 'MaxDist', tpe: 'int' }, { id: 'ClusterSize', tpe: 'int' }, { id: 'ClusterMemberCount', tpe: 'int' } ],
-                        'ID'
-                    );
-                }
+                // Declare a first table for fetching
+/*                getter.addTable(
+                    'customtracks',
+                    [
+                        'id',
+                        'name'
+                    ],
+                    'name'
+                );*/
+
                 // Execute the fetching
                 getter.execute(
-                    MetaData.serverUrl,             // Url where DQXServer is running
-                    MetaData.database,              // Name of the database
-                    function() {                    // Callback function that is called when all tables are fetched
-                        if (MetaData.showClusterData) {
-                            MetaData.clustersites = getter.getTableRecords('clustersites');                     // Store the result in the metadata
-                            MetaData.clustermembercount = getter.getTableRecords('clustermembercount');
-                        }
-                        proceedFunction();                                                                  // Proceed with the initialisation
+                    MetaData.serverUrl,
+                    MetaData.database,
+                    function() {
+                        //MetaData.tracks = getter.getTableRecords('customtracks');
+                        proceedFunction();
                     }
                 );
             }

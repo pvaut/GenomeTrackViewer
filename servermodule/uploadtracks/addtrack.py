@@ -18,6 +18,7 @@ def response(returndata):
     tb.LoadFile(file_path)
     tb.ConvertColToValue('pos')
     tb.ConvertColToValue('value')
+    tb.RenameCol('value',trackUid)
 
     sqlfile = os.path.join(config.BASEDIR, 'Uploads', 'tb_'+returndata['fileid']+'.sql')
     tb.SaveSQLDump(sqlfile, trackUid)
@@ -25,9 +26,9 @@ def response(returndata):
 
     db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
-    cur.execute("INSERT INTO customtracks VALUES (%s,%s)", (trackUid, trackName) )
+    cur.execute("INSERT INTO customtracks VALUES (%s,%s,'')", (trackUid, trackName) )
 
-    sql = "CREATE TABLE {0} (chrom varchar(20), pos int, value float)".format(trackUid)
+    sql = "CREATE TABLE {0} (chrom varchar(20), pos int, {1} float)".format(trackUid,trackUid)
     print(sql)
     cur.execute(sql)
 
