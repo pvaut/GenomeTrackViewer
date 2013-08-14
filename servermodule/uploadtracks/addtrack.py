@@ -48,6 +48,6 @@ def response(returndata):
     os.system(cmd)
 
 
-    returndata['content'] = 'TEST'
+    returndata['trackid'] = trackUid
     return returndata
 

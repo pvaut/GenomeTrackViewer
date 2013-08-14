@@ -1,5 +1,5 @@
-define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/DocEl", "DQX/Utils", "DQX/Wizard", "DQX/ChannelPlot/GenomePlotter", "DQX/ChannelPlot/ChannelYVals", "DQX/ChannelPlot/ChannelPositions", "DQX/ChannelPlot/ChannelSequence","DQX/DataFetcher/DataFetchers", "DQX/DataFetcher/DataFetcherSummary", "MetaData"],
-    function (require, base64, Application, Framework, Controls, Msg, DocEl, DQX, Wizard, GenomePlotter, ChannelYVals, ChannelPositions, ChannelSequence, DataFetchers, DataFetcherSummary, MetaData) {
+define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/SQL", "DQX/DocEl", "DQX/Utils", "DQX/Wizard", "DQX/ChannelPlot/GenomePlotter", "DQX/ChannelPlot/ChannelYVals", "DQX/ChannelPlot/ChannelPositions", "DQX/ChannelPlot/ChannelSequence","DQX/DataFetcher/DataFetchers", "DQX/DataFetcher/DataFetcherSummary", "MetaData"],
+    function (require, base64, Application, Framework, Controls, Msg, SQL, DocEl, DQX, Wizard, GenomePlotter, ChannelYVals, ChannelPositions, ChannelSequence, DataFetchers, DataFetcherSummary, MetaData) {
 
         var GenomeBrowserModule = {
 
@@ -28,6 +28,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     this.panelControls.setPadding(10);
 
                     this.createPanelBrowser();
+
                 };
 
 
@@ -66,12 +67,31 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     //Define the action when a user clicks on a gene in the annotation channel
                     this.panelBrowser.getAnnotationChannel().handleFeatureClicked = function (geneID) {
-                        alert('Clicked on gene '+geneID);
+                        Msg.send({type:'GenePopup'}, geneID);
                     }
+
+                    Msg.listen("", { type: 'JumpgenomeRegion' }, that.onJumpGenomeRegion);
+
 
                     that.loadStatus();
 
                 };
+
+
+
+                //Call this function to jump to & highlight a specific region on the genome
+                that.onJumpGenomeRegion = function (context, args) {
+                    if ('chromoID' in args)
+                        var chromoID = args.chromoID;
+                    else {
+                        DQX.assertPresence(args, 'chromNr');
+                        var chromoID = that.panelBrowser.getChromoID(args.chromNr);
+                    }
+                    DQX.assertPresence(args, 'start'); DQX.assertPresence(args, 'end');
+                    that.activateState();
+                    that.panelBrowser.highlightRegion(chromoID, (args.start + args.end) / 2, args.end - args.start);
+                };
+
 
 
                 that.addTrack = function() {
@@ -106,9 +126,11 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         data.database = MetaData.database;
                         DQX.setProcessing();
                         DQX.customRequest(MetaData.serverUrl,'uploadtracks','addtrack',data,function(resp) {
-                            //alert(JSON.stringify(resp));
                             DQX.stopProcessing();
-                            that.loadStatus();
+//                            alert(JSON.stringify(resp));
+                            that.loadStatus(function() {
+                                that.editTrack(resp.trackid);
+                            });
                         });
                     });
                 }
@@ -143,7 +165,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     that.fetchers={};
                     $.each(MetaData.tracks,function(idx,trackInfo) {
-                        trackInfo.propertyDict={ minval:0, maxval:1, connect:false };
+                        trackInfo.propertyDict={ minval:0, maxval:1, connect:false, ylines:'' };
                         if (trackInfo.properties) {
                             var st = base64.decode(trackInfo.properties);
                             trackInfo.propertyDict = JSON.parse(st);
@@ -160,16 +182,32 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         );
                         theChannel
                             .setTitle(trackInfo.name)
-                            .setHeight(120)
+                            .setHeight(200,true)
                             .setMaxViewportSizeX(50.0e5)
                             .setChangeYScale(true,true);
                         that.panelBrowser.addChannel(theChannel, false);
+
+                        if (trackInfo.propertyDict.ylines) {
+                            $.each(trackInfo.propertyDict.ylines.split(','),function(idx,token) {
+                                theChannel.addComponent(ChannelYVals.YColorZone(null,parseFloat(token),parseFloat(token),DQX.Color(1,0,0)));
+                            });
+                        }
 
                         var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, dataFetcherSNPs, trackInfo.id), true);//Create the component
                         plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
                         if (trackInfo.propertyDict.connect)
                             plotcomp.myPlotHints.makeDrawLines(1.0e99);
                         that.fetchers[trackInfo.id]=dataFetcherSNPs;
+
+
+
+                        //Define the tooltip shown when a user hovers the mouse over a point in the channel
+                        theChannel.getToolTipContent = function(compID, pointIndex) {
+                            var pos = that.fetchers[compID].getPosition(pointIndex);
+                            var value = that.fetchers[compID].getColumnPoint(pointIndex, compID);
+                            return 'Position= '+pos+'<br/>Value= '+value.toFixed(4);
+                        };
+
 
                         var ctrl_onoff = theChannel.createComponentVisibilityControl(trackInfo.id, 'Display', false);
                         var ctrl_del = Controls.Button(null, { content: 'Delete...' }).setOnChanged(function() { that.delTrack(trackInfo.id) });
@@ -214,7 +252,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             trackInfo = trackinf;
                     });
 
-                    var wiz=Wizard.Create('EditTrack', {title:'Edit track', sizeX:400, sizeY: 300});
+                    var wiz=Wizard.Create('EditTrack', {title:'Edit track', sizeX:400, sizeY: 400});
 
                     var ctrl_trackName = Controls.Edit(null, { size: 30 });
                     ctrl_trackName.modifyValue(trackInfo.name);
@@ -222,12 +260,19 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     var ctrl_minval = Controls.Edit(null, { size: 10, value:trackInfo.propertyDict.minval });
                     var ctrl_maxval = Controls.Edit(null, { size: 10, value:trackInfo.propertyDict.maxval });
 
+                    var ctrl_ylines = Controls.Edit(null, { size: 30, value:trackInfo.propertyDict.ylines });
+
                     var ctrl_connect = Controls.Check(null, { label:'Connect points', value:trackInfo.propertyDict.connect });
 
                     var controls = Controls.CompoundVert([
                         Controls.CompoundHor([Controls.Static('Track name:'),ctrl_trackName]),
+                        Controls.VerticalSeparator(15),
                         Controls.CompoundHor([Controls.Static('Min value:'),ctrl_minval]),
+                        Controls.VerticalSeparator(15),
                         Controls.CompoundHor([Controls.Static('Max value:'),ctrl_maxval]),
+                        Controls.VerticalSeparator(15),
+                        Controls.CompoundHor([Controls.Static('Y value lines (comma separated) :'),ctrl_ylines]),
+                        Controls.VerticalSeparator(15),
                         ctrl_connect
                     ]);
 
@@ -243,7 +288,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         var props={
                             minval:wiz.getResultValue(ctrl_minval.getID()),
                             maxval:wiz.getResultValue(ctrl_maxval.getID()),
-                            connect:wiz.getResultValue(ctrl_connect.getID())
+                            connect:wiz.getResultValue(ctrl_connect.getID()),
+                            ylines:wiz.getResultValue(ctrl_ylines.getID())
                         };
 
                         var data={};
