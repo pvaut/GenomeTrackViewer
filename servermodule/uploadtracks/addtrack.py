@@ -4,6 +4,10 @@ import os
 import config
 import VTTable
 
+def GenerateError(returndata, msg):
+    returndata['Error'] = msg
+    return returndata
+
 
 def response(returndata):
 
@@ -15,7 +19,18 @@ def response(returndata):
     file_path = os.path.join(config.BASEDIR, 'Uploads', returndata['fileid'])
     tb = VTTable.VTTable()
     tb.allColumnsText = True
-    tb.LoadFile(file_path)
+    try:
+        tb.LoadFile(file_path)
+    except Exception as e:
+        return GenerateError(returndata, 'Invalid data file format')
+
+    if not(tb.IsColumnPresent('chrom')):
+        return GenerateError(returndata, 'Column "chrom" is not present')
+    if not(tb.IsColumnPresent('pos')):
+        return GenerateError(returndata, 'Column "pos" is not present')
+    if not(tb.IsColumnPresent('value')):
+        return GenerateError(returndata, 'Column "value" is not present')
+
     tb.ConvertColToValue('pos')
     tb.ConvertColToValue('value')
     tb.RenameCol('value',trackUid)

@@ -127,7 +127,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         DQX.setProcessing();
                         DQX.customRequest(MetaData.serverUrl,'uploadtracks','addtrack',data,function(resp) {
                             DQX.stopProcessing();
-//                            alert(JSON.stringify(resp));
+                            if ('Error' in resp) {
+                                alert(resp.Error);
+                                return;
+                            }
                             that.loadStatus(function() {
                                 that.editTrack(resp.trackid);
                             });

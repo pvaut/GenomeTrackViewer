@@ -38,10 +38,15 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             content += '<b>Name</b>: '+data.fname+'<br/>';
             content += '<b>Position</b>: '+data.chromid+':'+data.fstart+'-'+data.fstop+'<br/>';
 
-            var button_plasmodb = Controls.Button(null, { content: 'Find in PlasmoDb' })/*.setOnChanged(that.addTrack)*/;
+            var button_plasmodb = Controls.Button(null, { content: 'Find in PlasmoDb' }).setOnChanged(function() {
+                window.open("http://plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&source_id={id}&project_id=PlasmoDB".DQXformat({id:data.fid}), '_blank');
+                //
+            });
             content += button_plasmodb.renderHtml();
 
-            var button_genedb = Controls.Button(null, { content: 'Find in GeneDb' })/*.setOnChanged(that.addTrack)*/;
+            var button_genedb = Controls.Button(null, { content: 'Find in GeneDb' }).setOnChanged(function() {
+                window.open('http://www.genedb.org/gene/'+data.fid, '_blank');
+            });
             content += button_genedb.renderHtml();
 
             Popup.create('Gene',content);
