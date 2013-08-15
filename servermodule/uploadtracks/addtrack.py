@@ -15,6 +15,7 @@ def response(returndata):
 
     trackUid = 'TR'+str(uuid.uuid1()).replace('-', '_')
     trackName = returndata['name']
+    colnr=2
 
     file_path = os.path.join(config.BASEDIR, 'Uploads', returndata['fileid'])
     tb = VTTable.VTTable()
@@ -24,16 +25,21 @@ def response(returndata):
     except Exception as e:
         return GenerateError(returndata, 'Invalid data file format')
 
+    if tb.IsColumnPresent('Chr'):
+        tb.RenameCol('Chr','chrom')
+    if tb.IsColumnPresent('Pos'):
+        tb.RenameCol('Pos','pos')
+
     if not(tb.IsColumnPresent('chrom')):
         return GenerateError(returndata, 'Column "chrom" is not present')
     if not(tb.IsColumnPresent('pos')):
         return GenerateError(returndata, 'Column "pos" is not present')
-    if not(tb.IsColumnPresent('value')):
-        return GenerateError(returndata, 'Column "value" is not present')
+#    if not(tb.IsColumnPresent('value')):
+#        return GenerateError(returndata, 'Column "value" is not present')
 
     tb.ConvertColToValue('pos')
-    tb.ConvertColToValue('value')
-    tb.RenameCol('value',trackUid)
+    tb.RenameCol(tb.GetColName(colnr),trackUid)
+    tb.ConvertColToValue(trackUid)
 
     sqlfile = os.path.join(config.BASEDIR, 'Uploads', 'tb_'+returndata['fileid']+'.sql')
     tb.SaveSQLDump(sqlfile, trackUid)
