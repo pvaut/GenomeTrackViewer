@@ -12,7 +12,7 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         //theMetaData1.database = 'pf21c';
-        MetaData.database = 'pfx';
+        MetaData.database = 'pf30viewtracks';
         //MetaData.tableSNPInfo = 'pfsnprel21'; //SNP information (including population frequencies)
         MetaData.tableAnnotation = 'pf3annot'; //Genome annotation
 

@@ -72,6 +72,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     Msg.listen("", { type: 'JumpgenomeRegion' }, that.onJumpGenomeRegion);
 
+                    that.createSnpPositionChannel();
 
                     that.loadStatus();
 
@@ -92,6 +93,38 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     that.panelBrowser.highlightRegion(chromoID, (args.start + args.end) / 2, args.end - args.start);
                 };
 
+
+                //Creates a channel that shows the SNP positions
+                that.createSnpPositionChannel = function() {
+
+                    that.dataFetcherSNPs = new DataFetchers.Curve(
+                        MetaData.serverUrl,
+                        MetaData.database,
+                        'snpinfo'
+                    );
+                    that.panelBrowser.addDataFetcher(that.dataFetcherSNPs);
+
+                    var theChannel = ChannelPositions.Channel(null,
+                        that.dataFetcherSNPs,   // The datafetcher containing the positions of the snps
+                        'SnpName'                 // Name of the column containing a unique identifier for each snp
+                    );
+                    theChannel
+                        .setTitle("SNP positions")        //sets the title of the channel
+                        .setMaxViewportSizeX(5.0e5);     //if more than 5e5 bases are in the viewport, this channel is not shown
+                    theChannel.makeCategoricalColors(//Assign a different color to silent/nonsilent snps
+                        'MutType',               // Name of the column containing a categorical string value that determines the color of the snp
+                        { 'S' :  DQX.Color(1,1,0) , 'N' : DQX.Color(1,0.4,0) }   //Map of value-color pairs
+                    );
+                    //Define a custom tooltip
+                    theChannel.setToolTipHandler(function(snpid) {
+                        return 'SNP: '+snpid;
+                    })
+                    //Define a function tht will be called when the user clicks a snp
+                    theChannel.setClickHandler(function(snpid) {
+                        Msg.send({ type: 'SnpPopup' }, snpid);//Send a message that should trigger showing the snp popup
+                    })
+                    that.panelBrowser.addChannel(theChannel, false);//Add the channel to the browser
+                }
 
 
                 that.addTrack = function() {
@@ -210,6 +243,13 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             var value = that.fetchers[compID].getColumnPoint(pointIndex, compID);
                             return 'Position= '+pos+'<br/>Value= '+value.toFixed(4);
                         };
+
+                        //Define the action when a user clicks on a point in the channel
+                        theChannel.handlePointClicked = function(compID, pointIndex) {
+                            var snpid = that.panelBrowser.getCurrentChromoID()+':'+that.fetchers[compID].getPosition(pointIndex);
+                            Msg.send({ type: 'SnpPopup' }, snpid);
+                        };
+
 
 
                         var ctrl_onoff = theChannel.createComponentVisibilityControl(trackInfo.id, 'Display', false);
