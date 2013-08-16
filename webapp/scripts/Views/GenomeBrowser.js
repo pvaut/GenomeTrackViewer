@@ -102,7 +102,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         MetaData.database,
                         'snpinfo'
                     );
-                    that.panelBrowser.addDataFetcher(that.dataFetcherSNPs);
 
                     var theChannel = ChannelPositions.Channel(null,
                         that.dataFetcherSNPs,   // The datafetcher containing the positions of the snps
