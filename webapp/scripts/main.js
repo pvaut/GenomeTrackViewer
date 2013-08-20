@@ -31,15 +31,15 @@ require.config({
 
 
 
-require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "DQX/DataFetcher/DataFetchers", "MetaData", "Views/Intro", "Views/GenomeBrowser", "Views/TableViewer", "InfoPopups/GenePopup", "InfoPopups/SnpPopup" ],
-    function ($, Application, Framework, Msg, DQX, DataFetchers, MetaData, Intro, GenomeBrowser, TableViewer, GenePopup, SnpPopup) {
+require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "DQX/DataFetcher/DataFetchers", "MetaData", "Views/Intro", "Views/GenomeBrowser", "Views/TableViewer", "InfoPopups/GenePopup", "InfoPopups/SnpPopup", "Wizards/PromptWorkspace" ],
+    function ($, Application, Framework, Msg, DQX, DataFetchers, MetaData, Intro, GenomeBrowser, TableViewer, GenePopup, SnpPopup, PromptWorkspace) {
         $(function () {
 
             GenePopup.init();
             SnpPopup.init();
 
             // Initialise all the views in the application
-            //Intro.init();
+            Intro.init();
             GenomeBrowser.init();
             TableViewer.init();
 
@@ -72,8 +72,8 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                     MetaData.serverUrl,
                     MetaData.database,
                     function() {
+                        PromptWorkspace.execute(proceedFunction);
                         //MetaData.tracks = getter.getTableRecords('customtracks');
-                        proceedFunction();
                     }
                 );
             }

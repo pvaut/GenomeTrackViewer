@@ -12,7 +12,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
         SnpPopup.show = function(snpID) {
             var myurl = DQX.Url(MetaData.serverUrl);
             myurl.addUrlQueryItem("datatype", 'recordinfo');
-            myurl.addUrlQueryItem("qry", SQL.WhereClause.encode(SQL.WhereClause.CompareFixed('SnpName', '=', snpID)));
+            myurl.addUrlQueryItem("qry", SQL.WhereClause.encode(SQL.WhereClause.CompareFixed('snpid', '=', snpID)));
             myurl.addUrlQueryItem("database", MetaData.database);
             myurl.addUrlQueryItem("tbname", 'snpinfo');
             $.ajax({
@@ -38,7 +38,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 content += '<b>'+id+'</b>: '+value+'<br/>';
             });
 
-            Popup.create('SNP: '+data.SnpName,content);
+            Popup.create('SNP: '+data.snpid,content);
         }
 
 

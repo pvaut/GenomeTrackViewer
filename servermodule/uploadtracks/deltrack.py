@@ -16,7 +16,7 @@ def response(returndata):
     cur = db.cursor()
 
     cur.execute("DROP TABLE "+trackid)
-    cur.execute("DELETE FROM customtracks WHERE ID=%s", (trackid) )
+    cur.execute("DELETE FROM customtracks WHERE id=%s", (trackid) )
 
 
     db.commit()

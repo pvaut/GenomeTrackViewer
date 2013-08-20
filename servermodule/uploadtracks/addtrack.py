@@ -14,7 +14,8 @@ def response(returndata):
     databaseName = returndata['database']
 
     trackUid = 'TR'+str(uuid.uuid1()).replace('-', '_')
-    trackName = returndata['name']
+    workspaceid = DQXDbTools.ToSafeIdentifier(returndata['workspaceid'])
+    trackName = DQXDbTools.ToSafeIdentifier(returndata['name'])
     colnr=2
 
     file_path = os.path.join(config.BASEDIR, 'Uploads', returndata['fileid'])
@@ -47,7 +48,7 @@ def response(returndata):
 
     db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
-    cur.execute("INSERT INTO customtracks VALUES (%s,%s,'')", (trackUid, trackName) )
+    cur.execute("INSERT INTO customtracks VALUES (%s,%s,'',%s)", (trackUid, trackName,workspaceid) )
 
     sql = "CREATE TABLE {0} (chrom varchar(20), pos int, {1} float)".format(trackUid,trackUid)
     print(sql)

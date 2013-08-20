@@ -105,7 +105,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     var theChannel = ChannelPositions.Channel(null,
                         that.dataFetcherSNPs,   // The datafetcher containing the positions of the snps
-                        'SnpName'                 // Name of the column containing a unique identifier for each snp
+                        'snpid'                 // Name of the column containing a unique identifier for each snp
                     );
                     theChannel
                         .setTitle("SNP positions")        //sets the title of the channel
@@ -156,6 +156,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         data.fileid = wiz.getResultValue(ctrl_trackFile.getID());
                         data.name = wiz.getResultValue(ctrl_trackName.getID());
                         data.database = MetaData.database;
+                        data.workspaceid = MetaData.workspaceid;
                         DQX.setProcessing();
                         DQX.customRequest(MetaData.serverUrl,'uploadtracks','addtrack',data,function(resp) {
                             DQX.stopProcessing();
@@ -174,7 +175,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.loadStatus = function(proceedFunction) {
                     var getter = DataFetchers.ServerDataGetter();//Instantiate the fetcher object
                     // Declare a first table for fetching
-                    getter.addTable('customtracks', ['id','name', 'properties'], 'name');
+                    getter.addTable('customtracks', ['id','name', 'properties'], 'name',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
 
                     // Execute the fetching
                     getter.execute(MetaData.serverUrl,MetaData.database,
@@ -280,7 +281,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     });
 
                     if (confirm('Are you sure you want to permanently delete track "{name}"'.DQXformat({name:trackInfo.name}))) {
-                        var data = {database:MetaData.database, trackid:trackid };
+                        var data = {database:MetaData.database, workspaceid: MetaData.workspaceid, trackid:trackid };
                         DQX.customRequest(MetaData.serverUrl,'uploadtracks','deltrack',data,function() {
                             that.loadStatus();
                         })
@@ -335,8 +336,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         };
 
                         var data={};
-                        data.trackid=trackInfo.id;
-                        data.name=wiz.getResultValue(ctrl_trackName.getID());
+                        data.workspaceid = MetaData.workspaceid;
+                        data.trackid = trackInfo.id;
+                        data.name = wiz.getResultValue(ctrl_trackName.getID());
                         data.database = MetaData.database;
                         data.properties = base64.encode(JSON.stringify(props));
                         DQX.setProcessing();

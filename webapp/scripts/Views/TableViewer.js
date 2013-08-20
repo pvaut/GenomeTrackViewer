@@ -59,7 +59,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     this.theTableFetcher = DataFetchers.Table(
                         MetaData.serverUrl,     //url of the DQXServer instance providing the data
                         MetaData.database,      //name of the database
-                        MetaData.tableSNPInfo   //name of the table containing the data
+                        'comb'   //name of the table containing the data
                     );
                     this.theTableFetcher.showDownload=true; //Allows the user to download the data in the table
 
@@ -97,17 +97,19 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             "Chrom.",       // Display name of the column
                             "chrom",        // ID (=Column name in the database table
                             0),             // Table part (1=right, scrolling)
-                        "Int",              // Transfer encoding: integer (see DataFetchers.CurveColumn for possible choices)
+                        "String",              // Transfer encoding: integer (see DataFetchers.CurveColumn for possible choices)
                         false               // Column is not sortable by itself (sorted via joint statement chrom+pos)
                     );
-                    comp.CellToText = function(nr) { return MetaData.chromosomes[nr-1].id; }; // Converts the number to a chromosome name
+/*                    comp.CellToText = function(nr) {
+                        return MetaData.chromosomes[nr-1].id;
+                    }; // Converts the number to a chromosome name*/
 
                     // For the query tools, define this column as a multiple choice set
                     var chromPickList = [];
                     $.each(MetaData.chromosomes,function(idx,chrom) {
                         chromPickList.push({ id: idx+1, name: MetaData.chromosomes[idx].id });
                     })
-                    comp.setDataType_MultipleChoiceInt(chromPickList);
+                    //comp.setDataType_MultipleChoiceInt(chromPickList);
 
                     // Add a column for position
                     var comp = that.myTable.createTableColumn(QueryTable.Column("Position.","pos",0),"IntB64",false);
@@ -125,16 +127,16 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     })
 
                     //Create a column for each population frequency
-                    $.each(MetaData.populations,function(idx,pop) {
+                    $.each(['prop0', 'prop1', 'prop2', 'prop3', 'prop4'],function(idx,fld) {
                         var col = that.myTable.createTableColumn(
                             QueryTable.Column(
-                                pop.freqid,       //Name of the column
-                                pop.freqid,       //Id of the column in the database table
+                                fld,       //Name of the column
+                                fld,       //Id of the column in the database table
                                 1),               //Table part (1=right, scrolling)
                             "Float3",             //Transfer encoding: float encoded in 3 base64 characters
                             true                  // Column is sortable
                         );
-                        col.setToolTip(pop.name); //Provide a tool tip for the column
+                        //col.setToolTip(pop.name); //Provide a tool tip for the column
                         //Define a callback when the user clicks on a column
                         col.setHeaderClickHandler(function(id) {
                             alert('column clicked '+id);
@@ -144,10 +146,10 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     })
 
                     //Add some  more columns
-                    that.myTable.createTableColumn(QueryTable.Column("Gene names","aliases",1),"String",true);
                     that.myTable.createTableColumn(QueryTable.Column("Gene description","GeneDescription",1),"String",true);
-
-                    //we start by defining a query that returns everything
+                    that.myTable.createTableColumn(QueryTable.Column("Mut type","MutType",1),"String",true);
+                    that.myTable.createTableColumn(QueryTable.Column("Mut name","MutName",1),"String",true);
+                                        //we start by defining a query that returns everything
                     that.myTable.queryAll();
 
                 };
