@@ -254,7 +254,9 @@ class VTTable:
             if colinfo.GetTypeStr()=='Value':
                 typestr='float'
             st += ' '+typestr
-            st += ',\n'
+            if col!=self.GetColName(self.GetColCount()-1):
+                st += ','
+            st += '\n'
             f.write(st)
         f.write(');\n')
         f.close()

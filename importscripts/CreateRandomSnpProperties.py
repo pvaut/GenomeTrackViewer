@@ -48,6 +48,7 @@ tb.PrintRows(0,10)
 
 
 
+tb.SaveFile('/home/pvaut/Documents/Genome/PfPopgen30/snpprops.txt')
 tb.SaveSQLCreation('/home/pvaut/Documents/Genome/PfPopgen30/snpprops_create.sql','snpprops')
 tb.SaveSQLDump('/home/pvaut/Documents/Genome/PfPopgen30/snpprops_dump.sql','snpprops')
 sys.exit()

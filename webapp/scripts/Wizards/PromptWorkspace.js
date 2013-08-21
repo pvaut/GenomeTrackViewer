@@ -15,7 +15,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 MetaData.database,
                 function() {
                     PromptWorkspace.workspaces = getter.getTableRecords('workspaces');
-                    PromptWorkspace.execute2();
+                    if (true) {// Quicl and dirty pick first, for development
+                        MetaData.workspaceid  = PromptWorkspace.workspaces[0].id;
+                        proceedFunction();
+                    }
+                    else
+                        PromptWorkspace.execute2();
                 }
             );
 
@@ -84,13 +89,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             data={};
             data.database = MetaData.database;
             data.name = name;
-            DQX.setProcessing();
-            DQX.customRequest(MetaData.serverUrl,'uploadtracks','createworkspace',data,function(resp) {
-                DQX.stopProcessing();
-                if ('Error' in resp) {
-                    alert(resp.Error);
-                    return;
-                }
+            asyncRequest('createworkspace', data, function(resp) {
                 PromptWorkspace.reload(resp.id);
             });
         }
