@@ -135,7 +135,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     var comp = that.myTable.createTableColumn(QueryTable.Column("SNP ID","snpid",1),"String",true);
                     comp.setToolTip('SNP identifier');  // Hover tooltip
                     comp.setCellClickHandler(function(fetcher,downloadrownr) {
-                        var snpid = fetcher.getColumnPoint(downloadrownr, 'snpid');
+                        var snpid=that.panelTable.getTable().getCellValue(downloadrownr,"snpid");
                         Msg.send({ type: 'SnpPopup' }, snpid);
                     })
 

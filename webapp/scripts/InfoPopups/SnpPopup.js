@@ -38,7 +38,14 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 content += '<b>'+id+'</b>: '+value+'<br/>';
             });
 
-            Popup.create('SNP: '+data.snpid,content);
+            var bt = Controls.Button(null, { content: 'Show on genome'}).setOnChanged(function() {
+                Popup.closeIfNeeded(popupid);
+                Msg.send({ type: 'JumpgenomePosition' }, {chromoID:data.chrom, position:parseInt(data.pos) });
+            })
+            content += bt.renderHtml();
+
+
+            var popupid = Popup.create('SNP: '+data.snpid,content);
         }
 
 

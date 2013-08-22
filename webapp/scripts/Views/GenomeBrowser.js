@@ -18,6 +18,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     rootFrame.makeGroupHor();//Declare the root frame as a horizontally divided set of subframes
                     this.frameControls = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3));//Create frame that will contain the controls panel
                     this.frameBrowser = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.7));//Create frame that will contain the genome browser panel
+
+                    Msg.listen("", { type: 'JumpgenomeRegion' }, that.onJumpGenomeRegion);
+                    Msg.listen("", { type: 'JumpgenomePosition' }, that.onJumpGenomePosition);
+
                 }
 
 
@@ -70,7 +74,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         Msg.send({type:'GenePopup'}, geneID);
                     }
 
-                    Msg.listen("", { type: 'JumpgenomeRegion' }, that.onJumpGenomeRegion);
 
                     that.createSnpPositionChannel();
 
@@ -97,6 +100,20 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     that.activateState();
                     that.panelBrowser.highlightRegion(chromoID, (args.start + args.end) / 2, args.end - args.start);
                 };
+
+                //Call this function to jump to & highlight a specific region on the genome
+                that.onJumpGenomePosition = function (context, args) {
+                    if ('chromoID' in args)
+                        var chromoID = args.chromoID;
+                    else {
+                        DQX.assertPresence(args, 'chromNr');
+                        var chromoID = that.panelBrowser.getChromoID(args.chromNr);
+                    }
+                    DQX.assertPresence(args, 'position');
+                    that.activateState();
+                    that.panelBrowser.highlightRegion(chromoID, args.position, 0);
+                };
+
 
 
                 //Creates a channel that shows the SNP positions
@@ -154,6 +171,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     //Create a column for each population frequency
                     that.currentCustomSnpProperties = [];
+                    var visibilityControls = [];
                     $.each(MetaData.customSnpProperties,function(idx,propInfo) {
                         that.currentCustomSnpProperties.push(propInfo.propid);
                         //Create the channel in the browser that will contain the frequency values
@@ -171,7 +189,13 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
 //                        if (trackInfo.propertyDict.connect)
 //                            plotcomp.myPlotHints.makeDrawLines(1.0e99);
+                        var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, propInfo.propid, false);
+                        visibilityControls.push(ctrl_onoff);
                     });
+
+                    this.panelControls.clear();
+                    this.panelControls.addControl(Controls.CompoundVert(visibilityControls));
+                    this.panelControls.render();
 
                     that.panelBrowser.handleResize();
                     that.panelBrowser.setChromosome(MetaData.chromosomes[0].id,true,true);
