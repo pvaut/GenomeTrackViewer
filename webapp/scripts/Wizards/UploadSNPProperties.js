@@ -28,9 +28,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 UploadSNPProperties.getFileInfo(ctrl_trackFile.getValue());
             });
 
+            UploadSNPProperties.ctrl_uploadresults = Controls.Html(null,"");
+
             var controls = Controls.CompoundVert([
                 Controls.Static('Select a TAB delimited file from your local hard disk, containing SNP properties that you want to upload'),
-                ctrl_trackFile
+                ctrl_trackFile,
+                UploadSNPProperties.ctrl_uploadresults
             ]);
 
             UploadSNPProperties.propControls = Controls.CompoundVert([]);
@@ -51,6 +54,14 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 id: 'page2',
                 form: UploadSNPProperties.propControls,
                 reportValidationError: function() {
+                    var uploadingProperty = false;
+                    $.each(UploadSNPProperties.columns,function(idx,colname) {
+                        if (colname!='snpid') {
+                            var propChoice=UploadSNPProperties.propControls.findControl('propchoice_'+colname).getValue();
+                            if (propChoice) uploadingProperty = true;
+                        }
+                    });
+                    if (!uploadingProperty) return "No property is selected for upload";
                 }
             });
 
@@ -68,6 +79,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     }
                 });
                 asyncRequest('addsnpproperties', { database: MetaData.database, workspaceid: MetaData.workspaceid, fileid:wiz.getResultValue(ctrl_trackFile.getID()), props:propChoiceString }, function(resp) {
+                    Msg.send({ type: 'ReloadChannelInfo' });
                     UploadSNPProperties.proceedFunction();
                 });
 
@@ -91,11 +103,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     if (colname=='snpid')
                         hasSnpId = true;
                     else {
-                        var choice  = Controls.Combo('propchoice_'+colname,{label:'', states:[{id:'', name:'Do not use'}, {id:'Value', name:'Use as numerical value'}], val:['']});
+                        var choice  = Controls.Combo('propchoice_'+colname,{label:'', states:[{id:'', name:'Ignore'}, {id:'Value', name:'Upload (value)'}], val:['']});
+                        var fieldStatus = 'New field';
+                        if (colname in MetaData.mapCustomSnpProperties)
+                            var fieldStatus = '<span style="color:red">Present in workspace</span>';
                         UploadSNPProperties.propControls.addControl(Controls.CompoundHor([
                             Controls.Static(colname),
                             Controls.HorizontalSeparator(15),
-                            choice
+                            choice,
+                            Controls.HorizontalSeparator(15),
+                            Controls.Static(fieldStatus),
                         ]));
                         UploadSNPProperties.propControls.addControl(Controls.VerticalSeparator(7));
                     }
@@ -106,6 +123,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 }
                 UploadSNPProperties.correctFileUploaded = true;
                 //alert(JSON.stringify(resp));
+                UploadSNPProperties.ctrl_uploadresults.modifyValue('<b><br/>Click "Next" to proceed.</b>');
             });
         }
 

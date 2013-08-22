@@ -3,7 +3,7 @@ import uuid
 import os
 import config
 import asyncresponder
-import time
+import Utils
 
 def ResponseExecute(data, calculationObject):
     databaseName = data['database']
@@ -18,6 +18,7 @@ def ResponseExecute(data, calculationObject):
     calculationObject.SetInfo('Setting up workspace: create index')
     cur.execute("create unique index snpid on SNPINFO_{0}(snpid)".format(workspaceId) )
     cur.execute("INSERT INTO workspaces VALUES (%s,%s)", (workspaceId, workspaceName) )
+    Utils.UpdateSnpInfoView(workspaceId, cur)
     db.commit()
     db.close()
 

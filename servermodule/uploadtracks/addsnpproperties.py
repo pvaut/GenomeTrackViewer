@@ -74,7 +74,7 @@ def ResponseExecute(data, calculationObject):
         cur.execute('CREATE UNIQUE INDEX snpid ON {0}(snpid)'.format(tmptable))
 
         # Dropping columns that will be replaced
-        cur.execute('SELECT propid FROM snpproperties WHERE workspaceid="{0}"'.format(workspaceid))
+        cur.execute('SELECT propid FROM snpproperties WHERE (workspaceid="{0}") and (source="custom")'.format(workspaceid))
         existingProperties = []
         for row in cur.fetchall():
             existProperty= row[0]
@@ -83,7 +83,7 @@ def ResponseExecute(data, calculationObject):
         if len(existingProperties)>0:
             calculationObject.SetInfo('Removing outdated information')
             for prop in existingProperties:
-                cur.execute('DELETE FROM snpproperties WHERE (workspaceid="{0}") and (propid="{1}")'.format(workspaceid,prop))
+                cur.execute('DELETE FROM snpproperties WHERE (workspaceid="{0}") and (propid="{1}")'.format(workspaceid, prop))
             sql = "ALTER TABLE {0} ".format(sourcetable)
             for prop in existingProperties:
                 if prop!=existingProperties[0]:
@@ -122,6 +122,7 @@ def ResponseExecute(data, calculationObject):
             print('=========== STATEMENT '+sql)
             cur.execute(sql)
 
+        Utils.UpdateSnpInfoView(workspaceid, cur)
 
         db.commit()
         db.close()

@@ -60,6 +60,10 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
         ];
 
 
+        // Empty placeholders: this info has not been obtained yet
+        //MetaData.customSnpPropertiesChanged = true
+        MetaData.customSnpProperties = [];
+        MetaData.mapCustomSnpProperties = {};
 
         return MetaData;
     });

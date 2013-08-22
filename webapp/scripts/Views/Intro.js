@@ -1,6 +1,7 @@
-define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "MetaData", "Wizards/UploadSNPProperties"],
-    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, MetaData, UploadSNPProperties) {
+define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadSNPProperties", "Wizards/EditSNPProperty"],
+    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, DataFetchers, SQL, MetaData, UploadSNPProperties, EditSNPProperty) {
 
+        ////////////// Utilities for async server communication in case of lengthy operations
 
         waitForCompletion = function(calculationid, onCompleted, initialResponse) {
             var popupid = Popup.create('Processing','Server is processing. This may take a while!<p><div id="calculationprogressbox" style="min-width:400px"></div><p>', null, {canClose: false} );
@@ -48,17 +49,19 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                 //This function is called during the initialisation. Create the frame structure of the view here
                 that.createFrames = function(rootFrame) {
-                    rootFrame.makeFinal();//We have a single frame, no subdivisions
-                    that.rootFrame=rootFrame;//Remember that frame for when we need to define the panel for it
+                    rootFrame.makeGroupHor();
+
+                    this.frameButtons = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3));
+                    this.frameChannels = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.7)).setDisplayTitle("Workspace overview");
                 }
 
                 // This function is called during the initialisation. Create the panels that will populate the frames here
                 that.createPanels = function() {
-                    //Create a single panel of the type 'form'. This is the start screen, and we will populate this with a number of buttons starting specific actions
-                    this.panelForm = Framework.Form(this.rootFrame);
-                    this.panelForm.setPadding(10);
+                    this.panelButtons = Framework.Form(this.frameButtons);
+                    this.panelButtons.setPadding(10);
 
-
+                    this.panelChannels = FrameTree.Tree(this.frameChannels);
+                    that.updateChannelInfo();
 
                     var browserButton = Application.getView('genomebrowser').createActivationButton({
                         content: "Genome browser",
@@ -70,28 +73,69 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         bitmap: 'Bitmaps/circle_red_small.png'
                     });
 
-                    var bt = Controls.Button(null, { content: 'test async'});
-                    bt.setOnChanged(function() {
-                        asyncRequest('testasync', {}, function() {
-                            alert("It's done!");
-                        });
-                    })
-
                     var bt_addsnpprops = Controls.Button(null, { content: 'Upload SNP properties...'});
                     bt_addsnpprops.setOnChanged(function() {
                         UploadSNPProperties.execute(function() {});
                     })
 
+                    var bt_refresh = Controls.Button(null, { content: 'Refresh'}).setOnChanged(function() {
+                        Msg.send({ type: 'ReloadChannelInfo' });
+                    })
 
-
-                    this.panelForm.addControl(Controls.CompoundVert([
+                    this.panelButtons.addControl(Controls.CompoundVert([
                         Controls.CompoundHor([browserButton, tableViewerButton]) ,
-                        Controls.CompoundHor([bt, bt_addsnpprops])
+                        Controls.CompoundHor([bt_addsnpprops, bt_refresh])
                     ]));
 
                 }
 
 
+                that.updateChannelInfo = function(proceedFunction) {
+
+                    this.panelChannels.root.clear();
+                    that.panelChannels.render();
+                    var root_customsnpprops = this.panelChannels.root.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Custom SNP properties</span>')).setCanSelect(false);
+
+                    var br = that.panelChannels.root.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Genomic values</span>')).setCanSelect(false);
+                    var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Individual points</span>')).setCanSelect(false);
+                    var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Filterbank summarised</span>')).setCanSelect(false);
+
+                    var getter = DataFetchers.ServerDataGetter();
+                    getter.addTable('snpproperties',['propid','datatype'],'propid',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
+                    getter.execute(MetaData.serverUrl,MetaData.database,
+
+
+                        function() { // Upon completion of data fetching
+
+                            MetaData.customSnpProperties = getter.getTableRecords('snpproperties');
+                            MetaData.mapCustomSnpProperties = {};
+                            $.each(MetaData.customSnpProperties, function(idx, snpprop) {
+                                str = '<b>'+snpprop.propid+'</b>';
+                                str += ' ('+snpprop.datatype+')';
+                                var openButton = Controls.LinkButton(null,{smartLink : true, test:'bla'}).setOnChanged(function() {
+                                    EditSNPProperty.execute(snpprop.propid);
+                                });
+                                root_customsnpprops.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
+                                MetaData.mapCustomSnpProperties[snpprop.propid] = snpprop;
+                            });
+
+                            that.panelChannels.render();
+                            if (proceedFunction) proceedFunction();
+
+                        }
+
+
+                    );
+
+                }
+
+
+                Msg.listen('', { type: 'ReloadChannelInfo' }, function () {
+                    //MetaData.customSnpPropertiesChanged = true;
+                    that.updateChannelInfo(function() {
+                        Application.getView('tableviewer').uptodate =false;
+                    });
+                });
 
                 return that;
             }
