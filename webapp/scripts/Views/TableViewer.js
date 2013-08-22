@@ -123,6 +123,9 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     this.theTableFetcher.resetAll();
                     that.myTable.clearTableColumns();
 
+                    // Add a column for chromosome
+                    var comp = that.myTable.createTableColumn(QueryTable.Column("Chrom.","chrom",0),"String",false);
+
                     // Add a column for position
                     var comp = that.myTable.createTableColumn(QueryTable.Column("Position.","pos",0),"IntB64",false);
                     that.myTable.addSortOption("Position", SQL.TableSort(['chrom', 'pos'])); // Define a joint sort action on both columns chrom+pos
@@ -133,7 +136,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     comp.setToolTip('SNP identifier');  // Hover tooltip
                     comp.setCellClickHandler(function(fetcher,downloadrownr) {
                         var snpid = fetcher.getColumnPoint(downloadrownr, 'snpid');
-                        Msg.send({ type: 'ShowSNPPopup' }, snpid);
+                        Msg.send({ type: 'SnpPopup' }, snpid);
                     })
 
                     //Add some  more columns
@@ -159,7 +162,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         })
                         col.CellToText = funcFraction2Text //Show the frequency value with a fixed 3 digit format
                         col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
-                    })
+                    });
 
                     //we start by defining a query that returns everything
                     that.myTable.queryAll();

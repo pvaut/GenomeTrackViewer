@@ -100,32 +100,20 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Individual points</span>')).setCanSelect(false);
                     var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Filterbank summarised</span>')).setCanSelect(false);
 
-                    var getter = DataFetchers.ServerDataGetter();
-                    getter.addTable('snpproperties',['propid','datatype'],'propid',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
-                    getter.execute(MetaData.serverUrl,MetaData.database,
-
-
-                        function() { // Upon completion of data fetching
-
-                            MetaData.customSnpProperties = getter.getTableRecords('snpproperties');
-                            MetaData.mapCustomSnpProperties = {};
-                            $.each(MetaData.customSnpProperties, function(idx, snpprop) {
-                                str = '<b>'+snpprop.propid+'</b>';
-                                str += ' ('+snpprop.datatype+')';
-                                var openButton = Controls.LinkButton(null,{smartLink : true, test:'bla'}).setOnChanged(function() {
-                                    EditSNPProperty.execute(snpprop.propid);
-                                });
-                                root_customsnpprops.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
-                                MetaData.mapCustomSnpProperties[snpprop.propid] = snpprop;
+                    Application.getChannelInfo(function() {
+                        $.each(MetaData.customSnpProperties, function(idx, snpprop) {
+                            str = '<b>'+snpprop.propid+'</b>';
+                            str += ' ('+snpprop.datatype+')';
+                            var openButton = Controls.LinkButton(null,{smartLink : true, test:'bla'}).setOnChanged(function() {
+                                EditSNPProperty.execute(snpprop.propid);
                             });
+                            root_customsnpprops.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
+                        });
 
-                            that.panelChannels.render();
-                            if (proceedFunction) proceedFunction();
+                        that.panelChannels.render();
+                        if (proceedFunction) proceedFunction();
+                    });
 
-                        }
-
-
-                    );
 
                 }
 
@@ -133,7 +121,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 Msg.listen('', { type: 'ReloadChannelInfo' }, function () {
                     //MetaData.customSnpPropertiesChanged = true;
                     that.updateChannelInfo(function() {
-                        Application.getView('tableviewer').uptodate =false;
+                        Application.getView('tableviewer').uptodate = false;
+                        Application.getView('genomebrowser').uptodate = false;
                     });
                 });
 

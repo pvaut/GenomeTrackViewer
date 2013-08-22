@@ -31,8 +31,8 @@ require.config({
 
 
 
-require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "DQX/DataFetcher/DataFetchers", "MetaData", "Views/Intro", "Views/GenomeBrowser", "Views/TableViewer", "InfoPopups/GenePopup", "InfoPopups/SnpPopup", "Wizards/PromptWorkspace" ],
-    function ($, Application, Framework, Msg, DQX, DataFetchers, MetaData, Intro, GenomeBrowser, TableViewer, GenePopup, SnpPopup, PromptWorkspace) {
+require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "DQX/SQL", "DQX/DataFetcher/DataFetchers", "MetaData", "Views/Intro", "Views/GenomeBrowser", "Views/TableViewer", "InfoPopups/GenePopup", "InfoPopups/SnpPopup", "Wizards/PromptWorkspace" ],
+    function ($, Application, Framework, Msg, DQX, SQL, DataFetchers, MetaData, Intro, GenomeBrowser, TableViewer, GenePopup, SnpPopup, PromptWorkspace) {
         $(function () {
 
             GenePopup.init();
@@ -81,6 +81,23 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
 
             //Initialise the application
             Application.init('Test application');
+
+
+            Application.getChannelInfo = function(proceedFunction) {
+                var getter = DataFetchers.ServerDataGetter();
+                getter.addTable('snpproperties',['propid','datatype'],'propid',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
+                getter.execute(MetaData.serverUrl,MetaData.database,
+                    function() { // Upon completion of data fetching
+                        MetaData.customSnpProperties = getter.getTableRecords('snpproperties');
+                        MetaData.mapCustomSnpProperties = {};
+                        $.each(MetaData.customSnpProperties, function(idx, snpprop) {
+                            MetaData.mapCustomSnpProperties[snpprop.propid] = snpprop;
+                        });
+                        if (proceedFunction) proceedFunction();
+                    }
+                );
+            }
+
 
 
         });

@@ -17,7 +17,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     PromptWorkspace.workspaces = getter.getTableRecords('workspaces');
                     if (true) {// Quick and dirty pick first, for development
                         MetaData.workspaceid  = PromptWorkspace.workspaces[0].id;
-                        proceedFunction();
+                        Application.getChannelInfo(proceedFunction);
                     }
                     else
                         PromptWorkspace.execute2();
@@ -81,7 +81,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
             wiz.run(function() {
                 MetaData.workspaceid = wiz.getResultValue(PromptWorkspace.ctrl_workspacelist.getID());
-                PromptWorkspace.proceedFunction();
+                Application.getChannelInfo(PromptWorkspace.proceedFunction);
             });
         }
 
