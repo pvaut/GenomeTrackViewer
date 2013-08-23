@@ -15,12 +15,21 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 //This function is called during the initialisation. Create the frame structure of the view here
                 that.createFrames = function(rootFrame) {
+                    that.filterByQuery = false;
+                    that.currentUserQuery = null;
                     rootFrame.makeGroupHor();//Declare the root frame as a horizontally divided set of subframes
                     this.frameControls = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3));//Create frame that will contain the controls panel
                     this.frameBrowser = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.7));//Create frame that will contain the genome browser panel
 
                     Msg.listen("", { type: 'JumpgenomeRegion' }, that.onJumpGenomeRegion);
                     Msg.listen("", { type: 'JumpgenomePosition' }, that.onJumpGenomePosition);
+
+                    Msg.listen("", {type: 'QueryChanged'}, function(scope,query) {
+                        that.currentUserQuery = query;
+                        if (that.filterByQuery) {
+                            that.dataFetcherSNPProperties.setUserQuery2(query);
+                        }
+                    });
 
                 }
 
@@ -48,15 +57,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         viewID: '',
                         canZoomVert: true                           //Viewer contains buttons to alter the vertical size of the channels
                     };
-                    //NOTE: the annotation table should have the following fields:
-                    //    chromid: (varchar) identifier of the chromosome
-                    //    fstart,fstop: (int) start & stop of the feature
-                    //    fid: (varchar) feature identifier
-                    //    ftype: (varchar) feature type identifier, can be 'gene' or 'exon'
-                    //    fparentid: (varchar) in case of exon, identifier of the feature it belongs to
-                    //    fname: (varchar) display name of the feature
-                    //    fnames: (varchar) ;-separated list of alternative names (may be empty)
-                    //    descr: (varchar) description of the gene (may be empty)
 
                     //Initialise a genome browser panel
                     this.panelBrowser = GenomePlotter.Panel(this.frameBrowser, browserConfig);
@@ -73,6 +73,18 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     this.panelBrowser.getAnnotationChannel().handleFeatureClicked = function (geneID) {
                         Msg.send({type:'GenePopup'}, geneID);
                     }
+
+                    var ctrl_filtertype = Controls.RadioGroup('', { label:'Filter method', states:[{id:'all', name:'All SNPs'}, {id:'query', name:'Currently query'}], value:'all'}).setOnChanged(function() {
+                        that.filterByQuery = (ctrl_filtertype.getValue()=='query');
+                        if (that.filterByQuery)
+                            that.dataFetcherSNPProperties.setUserQuery2(that.currentUserQuery);
+                        else
+                            that.dataFetcherSNPProperties.setUserQuery2(null);
+                        that.panelBrowser.render();
+                    });
+                    this.panelControls.addControl(ctrl_filtertype);
+                    that.visibilityControlsGroup = this.panelControls.addControl(Controls.CompoundVert([]));
+
 
 
                     that.createSnpPositionChannel();
@@ -167,11 +179,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         'SNPCMB_'+MetaData.workspaceid
                     );
 
-                    //this.dataFetcherSNPProperties.setUserQuery2(SQL.WhereClause.CompareFixed('prop1','>',0.5));
+                    if (that.filterByQuery)
+                        this.dataFetcherSNPProperties.setUserQuery2(that.currentUserQuery);
 
                     //Create a column for each population frequency
                     that.currentCustomSnpProperties = [];
-                    var visibilityControls = [];
+                    that.visibilityControlsGroup.clear();
                     $.each(MetaData.customSnpProperties,function(idx,propInfo) {
                         that.currentCustomSnpProperties.push(propInfo.propid);
                         //Create the channel in the browser that will contain the frequency values
@@ -190,11 +203,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 //                        if (trackInfo.propertyDict.connect)
 //                            plotcomp.myPlotHints.makeDrawLines(1.0e99);
                         var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, propInfo.propid, false);
-                        visibilityControls.push(ctrl_onoff);
+                        that.visibilityControlsGroup.addControl(ctrl_onoff);
                     });
 
-                    this.panelControls.clear();
-                    this.panelControls.addControl(Controls.CompoundVert(visibilityControls));
                     this.panelControls.render();
 
                     that.panelBrowser.handleResize();

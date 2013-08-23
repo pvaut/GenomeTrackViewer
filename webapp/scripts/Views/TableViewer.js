@@ -168,7 +168,9 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     that.myTable.queryAll();
 
                     // Define an "advanced query" panel
-                    this.panelTable.createPanelAdvancedQuery(this.frameQueryAdvanced);
+                    this.panelTable.createPanelAdvancedQuery(this.frameQueryAdvanced, function() {
+                        Msg.send({ type: 'QueryChanged'}, that.panelTable.panelAdvancedQueryBuilder.getQuery() );
+                    });
 
                 }
 

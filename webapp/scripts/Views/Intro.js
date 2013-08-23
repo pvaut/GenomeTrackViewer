@@ -104,10 +104,14 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         $.each(MetaData.customSnpProperties, function(idx, snpprop) {
                             str = '<b>'+snpprop.propid+'</b>';
                             str += ' ('+snpprop.datatype+')';
-                            var openButton = Controls.LinkButton(null,{smartLink : true, test:'bla'}).setOnChanged(function() {
+                            var openButton = Controls.LinkButton(null,{smartLink : true }).setOnChanged(function() {
                                 EditSNPProperty.execute(snpprop.propid);
                             });
-                            root_customsnpprops.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
+                            var moveUpButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_up_1.png'), vertShift:-2 }).setOnChanged(function() {
+                            });
+                            var moveDownButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_down_1.png'), vertShift:-2 }).setOnChanged(function() {
+                            });
+                            root_customsnpprops.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),moveUpButton,Controls.HorizontalSeparator(0),moveDownButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
                         });
 
                         that.panelChannels.render();
