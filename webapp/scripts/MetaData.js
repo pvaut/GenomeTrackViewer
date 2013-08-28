@@ -61,7 +61,16 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
 
         // Empty placeholders: this info has not been obtained yet
         MetaData.customProperties = [];
-        MetaData.mapCustomProperties = {};
+
+        MetaData.findProperty = function(tableid, propid) {
+            var rs = null;
+            $.each(MetaData.customProperties, function(idx, propInfo) {
+                if ((propInfo.tableid==tableid) && (propInfo.propid==propid))
+                    rs =  propInfo;
+            });
+            if (rs!=null) return rs;
+            DQX.reportError('Property {prop} not found for table {table}'.DQXformat({prop:propid, table: tableid}));
+        }
 
         return MetaData;
     });

@@ -35,15 +35,17 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             }
         };
 
-        EditProperty.editProperty = function(propid) {
-            var frame = EditProperty.CreatePropertyDialogBox(propid);
+        EditProperty.editProperty = function(tableid, propid) {
+            var frame = EditProperty.CreatePropertyDialogBox(tableid, propid);
             frame.create();
         };
 
 
 
-        EditProperty.CreatePropertyDialogBox = function(propid) {
+        EditProperty.CreatePropertyDialogBox = function(tableid, propid) {
             var that = PopupFrame.PopupFrame('propedit', {title:'Edit property', blocking:true });
+
+            that.propInfo = MetaData.findProperty(tableid, propid);
 
             that.createFrames = function() {
                 that.frameRoot.makeGroupVert();
@@ -54,13 +56,44 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             };
 
             that.createPanels = function() {
+                that.panelBody = Framework.Form(that.frameBody).setPadding(10);
                 that.panelButtons = Framework.Form(that.frameButtons);
 
-                var bt_ok = Controls.Button(null, { content: 'OK'}).setOnChanged(function() {
-                    that.close();
-                });
+                var grouper = Controls.CompoundVert([]);
+
+                that.ctrl_name = Controls.Edit(null,{ size: 30, value: that.propInfo.name });
+
+                grouper.addControl(Controls.CompoundHor([Controls.Static('Name: '), that.ctrl_name]));
+
+
+                that.panelBody.addControl(grouper);
+
+                var bt_ok = Controls.Button(null, { content: 'OK'}).setOnChanged(that.onOK);
                 that.panelButtons.addControl(bt_ok);
             };
+
+            that.onOK = function() {
+
+                DQX.setProcessing();
+                var data ={};
+                data.database = MetaData.database;
+                data.workspaceid = MetaData.workspaceid;
+                data.tableid = that.propInfo.tableid;
+                data.propid = that.propInfo.propid;
+                data.name = that.ctrl_name.getValue();
+
+                that.close();
+
+                DQX.customRequest(MetaData.serverUrl,'uploadtracks','property_setinfo', data, function(resp) {
+                    DQX.stopProcessing();
+                    Msg.send({ type: 'ReloadChannelInfo' });
+                    if ('Error' in resp) {
+                        alert(resp.Error);
+                        return;
+                    }
+                });
+
+            }
 
             return that;
         }

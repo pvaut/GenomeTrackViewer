@@ -111,16 +111,16 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     Application.getChannelInfo(function() {
                         $.each(MetaData.customProperties, function(idx, prop) {
-                            str = '<b>'+prop.propid+'</b> ';
+                            str = '<b>'+prop.name+'</b> ';
                             if (prop.name!=prop.propid)
-                                str +=prop.name;
+                                str +=prop.propid;
                             str += ' ('+prop.datatype+')';
-                            var openButton = Controls.LinkButton(null,{smartLink : true }).setOnChanged(function() {
+                            var openButton = Controls.LinkButton(null,{smartLink : true, opacity:(prop.isCustom?1:0.25) }).setOnChanged(function() {
                                 EditProperty.execute(prop.tableid, prop.propid);
                             });
-                            var moveUpButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_up_1.png'), vertShift:-2 }).setOnChanged(function() {
+                            var moveUpButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_up_1.png'), vertShift:-2, opacity:0.5 }).setOnChanged(function() {
                             });
-                            var moveDownButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_down_1.png'), vertShift:-2 }).setOnChanged(function() {
+                            var moveDownButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_down_1.png'), vertShift:-2, opacity:0.5 }).setOnChanged(function() {
                             });
                             var root = tableRoots[prop.tableid];
                             root.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),moveUpButton,Controls.HorizontalSeparator(0),moveDownButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
@@ -142,6 +142,9 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         Application.getView('genomebrowser').uptodate = false;
                     });
                 });
+
+
+                //alert(JSON.stringify({ states: [{id:'S', name:'Silent'}, {id:'N', name:'Non-silent'}]}));
 
                 return that;
             }

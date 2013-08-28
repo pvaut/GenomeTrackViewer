@@ -104,11 +104,9 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                         getter.execute(MetaData.serverUrl,MetaData.database,
                             function() { // Upon completion of data fetching
                                 MetaData.customProperties = getter.getTableRecords('propertycatalog');
-                                MetaData.mapCustomProperties = {};
                                 $.each(MetaData.customProperties, function(idx, prop) {
                                     prop.isCustom = (prop.source=='custom');
                                     if (!prop.name) prop.name = prop.propid;
-                                    MetaData.mapCustomProperties[prop.propid] = prop;
                                 });
                                 if (proceedFunction) proceedFunction();
                             }
