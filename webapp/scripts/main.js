@@ -35,68 +35,90 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
     function ($, Application, Framework, Msg, DQX, SQL, DataFetchers, MetaData, Intro, GenomeBrowser, TableViewer, GenePopup, SnpPopup, PromptWorkspace) {
         $(function () {
 
-            GenePopup.init();
-            SnpPopup.init();
+            var getter = DataFetchers.ServerDataGetter();
+            getter.addTable('tablecatalog',['id','name','primkey'],'id');
+            getter.execute(MetaData.serverUrl,MetaData.database,
+                function() { // Upon completion of data fetching
+                    MetaData.tableCatalog = getter.getTableRecords('tablecatalog');
+                    MetaData.mapTableCatalog = {};
+                    $.each(MetaData.tableCatalog, function(idx, table) {
+                        MetaData.mapTableCatalog[table.id] = table;
+                    });
 
-            // Initialise all the views in the application
-            Intro.init();
-            GenomeBrowser.init();
-            TableViewer.init();
+                    GenePopup.init();
+                    SnpPopup.init();
 
-            // Create a custom 'navigation button' that will appear in the right part of the app header
-            Application.addNavigationButton('Test','Bitmaps/Icons/Small/MagGlassG.png', 80, function(){
-                alert('Navigation button clicked');
-            });
+                    // Initialise all the views in the application
+                    Intro.init();
+                    GenomeBrowser.init();
+                    $.each(MetaData.tableCatalog, function(idx, tableInfo) {
+                        TableViewer.init(tableInfo.id);
+                    })
+
+                    // Create a custom 'navigation button' that will appear in the right part of the app header
+                    Application.addNavigationButton('Test','Bitmaps/Icons/Small/MagGlassG.png', 80, function(){
+                        alert('Navigation button clicked');
+                    });
 
 
-            //Define the header content (visible in the top-left corner of the window)
-            Application.setHeader('<a href="http://www.malariagen.net" target="_blank"><img src="Bitmaps/malariagen_logo.png" alt="MalariaGEN logo" align="top" style="border:0px;margin:7px"/></a>');
+                    //Define the header content (visible in the top-left corner of the window)
+                    Application.setHeader('<a href="http://www.malariagen.net" target="_blank"><img src="Bitmaps/malariagen_logo.png" alt="MalariaGEN logo" align="top" style="border:0px;margin:7px"/></a>');
 
 
-            //Provide a hook to fetch some data upfront from the server. Upon completion, 'proceedFunction' should be called;
-            Application.customInitFunction = function(proceedFunction) {
-                // Here, we will fetch the full data of a couple of tables on the servers proactively
-                var getter = DataFetchers.ServerDataGetter();//Instantiate the fetcher object
-                // Declare a first table for fetching
-/*                getter.addTable(
-                    'customtracks',
-                    [
-                        'id',
-                        'name'
-                    ],
-                    'name'
-                );*/
+                    //Provide a hook to fetch some data upfront from the server. Upon completion, 'proceedFunction' should be called;
+                    Application.customInitFunction = function(proceedFunction) {
+                        // Here, we will fetch the full data of a couple of tables on the servers proactively
+                        var getter = DataFetchers.ServerDataGetter();//Instantiate the fetcher object
+                        // Declare a first table for fetching
+                        /*                getter.addTable(
+                         'customtracks',
+                         [
+                         'id',
+                         'name'
+                         ],
+                         'name'
+                         );*/
 
-                // Execute the fetching
-                getter.execute(
-                    MetaData.serverUrl,
-                    MetaData.database,
-                    function() {
-                        PromptWorkspace.execute(proceedFunction);
-                        //MetaData.tracks = getter.getTableRecords('customtracks');
+                        // Execute the fetching
+                        getter.execute(
+                            MetaData.serverUrl,
+                            MetaData.database,
+                            function() {
+                                PromptWorkspace.execute(proceedFunction);
+                                //MetaData.tracks = getter.getTableRecords('customtracks');
+                            }
+                        );
                     }
-                );
-            }
 
 
-            //Initialise the application
-            Application.init('Test application');
+                    //Initialise the application
+                    Application.init('Test application');
 
 
-            Application.getChannelInfo = function(proceedFunction) {
-                var getter = DataFetchers.ServerDataGetter();
-                getter.addTable('propertycatalog',['propid','datatype','tableid'],'propid',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
-                getter.execute(MetaData.serverUrl,MetaData.database,
-                    function() { // Upon completion of data fetching
-                        MetaData.customSnpProperties = getter.getTableRecords('propertycatalog');
-                        MetaData.mapCustomSnpProperties = {};
-                        $.each(MetaData.customSnpProperties, function(idx, snpprop) {
-                            MetaData.mapCustomSnpProperties[snpprop.propid] = snpprop;
-                        });
-                        if (proceedFunction) proceedFunction();
+                    Application.getChannelInfo = function(proceedFunction) {
+                        var getter = DataFetchers.ServerDataGetter();
+                        getter.addTable('tablecatalog',['id','name','primkey'],'id');
+                        getter.addTable('propertycatalog',['propid','datatype','tableid'],'propid',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
+                        getter.execute(MetaData.serverUrl,MetaData.database,
+                            function() { // Upon completion of data fetching
+                                MetaData.tableCatalog = getter.getTableRecords('tablecatalog');
+                                MetaData.mapTableCatalog = {};
+                                $.each(MetaData.tableCatalog, function(idx, table) {
+                                    MetaData.mapTableCatalog[table.id] = table;
+                                });
+                                MetaData.customProperties = getter.getTableRecords('propertycatalog');
+                                MetaData.mapCustomProperties = {};
+                                $.each(MetaData.customProperties, function(idx, prop) {
+                                    MetaData.mapCustomProperties[prop.propid] = prop;
+                                });
+                                if (proceedFunction) proceedFunction();
+                            }
+                        );
                     }
-                );
-            }
+
+
+                });
+
 
 
 

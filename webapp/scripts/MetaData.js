@@ -13,7 +13,6 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
 
         //theMetaData1.database = 'pf21c';
         MetaData.database = 'pf30viewtracks';
-        //MetaData.tableSNPInfo = 'pfsnprel21'; //SNP information (including population frequencies)
         MetaData.tableAnnotation = 'pf3annot'; //Genome annotation
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -61,9 +60,8 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
 
 
         // Empty placeholders: this info has not been obtained yet
-        //MetaData.customSnpPropertiesChanged = true
-        MetaData.customSnpProperties = [];
-        MetaData.mapCustomSnpProperties = {};
+        MetaData.customProperties = [];
+        MetaData.mapCustomProperties = {};
 
         return MetaData;
     });

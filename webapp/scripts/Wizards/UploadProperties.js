@@ -1,63 +1,64 @@
 define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/SQL", "DQX/DocEl", "DQX/Utils", "DQX/Wizard", "DQX/Popup", "DQX/ChannelPlot/GenomePlotter", "DQX/ChannelPlot/ChannelYVals", "DQX/ChannelPlot/ChannelPositions", "DQX/ChannelPlot/ChannelSequence","DQX/DataFetcher/DataFetchers", "DQX/DataFetcher/DataFetcherSummary", "MetaData"],
     function (require, base64, Application, Framework, Controls, Msg, SQL, DocEl, DQX, Wizard, Popup, GenomePlotter, ChannelYVals, ChannelPositions, ChannelSequence, DataFetchers, DataFetcherSummary, MetaData) {
 
-        var UploadSNPProperties = {};
+        var UploadProperties = {};
 
-        UploadSNPProperties.init = function() {
+        UploadProperties.init = function() {
         }
 
-        UploadSNPProperties.execute = function(proceedFunction) {
-            UploadSNPProperties.proceedFunction = proceedFunction;
-            var getter = DataFetchers.ServerDataGetter();//Instantiate the fetcher object
-            getter.addTable('workspaces',['id','name'],'name');
-            getter.execute(
-                MetaData.serverUrl,
-                MetaData.database,
-                function() {
-                    UploadSNPProperties.workspaces = getter.getTableRecords('workspaces');
-                    UploadSNPProperties.execute2();
-                }
-            );
+        UploadProperties.execute = function(proceedFunction) {
+            UploadProperties.proceedFunction = proceedFunction;
 
-        }
-
-        UploadSNPProperties.execute2 = function() {
-            var wiz=Wizard.Create('UploadSNPProperties', {title:'Upload SNP properties', sizeX:450, sizeY: 400});
+            var wiz=Wizard.Create('UploadProperties', {title:'Upload custom properties', sizeX:450, sizeY: 400});
 
             var ctrl_trackFile = Controls.FileUpload(null, { serverUrl: MetaData.serverUrl }).setOnChanged(function() {
-                UploadSNPProperties.getFileInfo(ctrl_trackFile.getValue());
+                UploadProperties.getFileInfo(ctrl_trackFile.getValue());
             });
 
-            UploadSNPProperties.ctrl_uploadresults = Controls.Html(null,"");
+            UploadProperties.ctrl_table=Controls.RadioGroup('ctrl_table',{ label:'Upload to table', states: MetaData.tableCatalog, value:MetaData.tableCatalog[0].id})
+
+            UploadProperties.ctrl_uploadresults = Controls.Html(null,"");
 
             var controls = Controls.CompoundVert([
-                Controls.Static('Select a TAB delimited file from your local hard disk, containing SNP properties that you want to upload'),
+                Controls.Static('Select a TAB delimited file from your local hard disk, containing the custom properties that you want to upload'),
                 ctrl_trackFile,
-                UploadSNPProperties.ctrl_uploadresults
+                UploadProperties.ctrl_uploadresults
             ]);
 
-            UploadSNPProperties.propControls = Controls.CompoundVert([]);
+            UploadProperties.propControls = Controls.CompoundVert([]);
+
+
+            wiz.addPage({
+                id: 'page0',
+                form: UploadProperties.ctrl_table,
+                reportValidationError: function() {
+                }
+            });
 
 
             wiz.addPage({
                 id: 'page1',
                 form: controls,
+                onStart: function() {
+                    UploadProperties.tableid = wiz.getResultValue(UploadProperties.ctrl_table.getID());
+                    UploadProperties.primkey = MetaData.mapTableCatalog[UploadProperties.tableid].primkey;
+                },
                 reportValidationError: function() {
                     if (!ctrl_trackFile.getValue())
                         return "No file selected";
-                    if (!UploadSNPProperties.correctFileUploaded)
+                    if (!UploadProperties.correctFileUploaded)
                         return "Invalid file";
                 }
             });
 
             wiz.addPage({
                 id: 'page2',
-                form: UploadSNPProperties.propControls,
+                form: UploadProperties.propControls,
                 reportValidationError: function() {
                     var uploadingProperty = false;
-                    $.each(UploadSNPProperties.columns,function(idx,colname) {
-                        if (colname!='snpid') {
-                            var propChoice=UploadSNPProperties.propControls.findControl('propchoice_'+colname).getValue();
+                    $.each(UploadProperties.columns,function(idx,colname) {
+                        if (colname!=UploadProperties.primkey) {
+                            var propChoice=UploadProperties.propControls.findControl('propchoice_'+colname).getValue();
                             if (propChoice) uploadingProperty = true;
                         }
                     });
@@ -68,8 +69,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
             wiz.run(function() {
                 var propChoiceString = '';
-                $.each(UploadSNPProperties.columns,function(idx,colname) {
-                    if (colname!='snpid') {
+                $.each(UploadProperties.columns,function(idx,colname) {
+                    if (colname!=UploadProperties.primkey) {
                         var propChoice=wiz.getResultValue('propchoice_'+colname);
                         if (propChoice) {
                             if (propChoiceString) propChoiceString += '~';
@@ -83,18 +84,18 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 data.workspaceid = MetaData.workspaceid;
                 data.fileid = wiz.getResultValue(ctrl_trackFile.getID());
                 data.props = propChoiceString;
-                data.tableid = 'SNP';
+                data.tableid = UploadProperties.tableid;
                 asyncRequest('property_add', data, function(resp) {
                     Msg.send({ type: 'ReloadChannelInfo' });
-                    UploadSNPProperties.proceedFunction();
+                    UploadProperties.proceedFunction();
                 });
 
             });
         }
 
 
-        UploadSNPProperties.getFileInfo = function(fileid) {
-            UploadSNPProperties.correctFileUploaded = false;
+        UploadProperties.getFileInfo = function(fileid) {
+            UploadProperties.correctFileUploaded = false;
             DQX.setProcessing();
             DQX.customRequest(MetaData.serverUrl,'uploadtracks','gettabfileinfo',{ database: MetaData.database, fileid: fileid },function(resp) {
                 DQX.stopProcessing();
@@ -102,39 +103,44 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     alert(resp.Error);
                     return;
                 }
-                UploadSNPProperties.columns = resp['columns'].split(';');
-                var hasSnpId = false;
-                UploadSNPProperties.propControls.clear();
-                $.each(UploadSNPProperties.columns,function(idx,colname) {
-                    if (colname=='snpid')
-                        hasSnpId = true;
+                UploadProperties.columns = resp['columns'].split(';');
+                var hasPrimKey = false;
+                UploadProperties.propControls.clear();
+                $.each(UploadProperties.columns,function(idx,colname) {
+                    if (colname==UploadProperties.primkey)
+                        hasPrimKey = true;
                     else {
                         var choice  = Controls.Combo('propchoice_'+colname,{label:'', states:[{id:'', name:'Ignore'}, {id:'Value', name:'Upload (value)'}], val:['']});
                         var fieldStatus = 'New field';
-                        if (colname in MetaData.mapCustomSnpProperties)
+                        var isPresent = false;
+                        $.each(MetaData.customProperties, function(idx, prop) {
+                            if ((colname==prop.propid) && (UploadProperties.tableid==prop.tableid))
+                                isPresent = true;
+                        });
+                        if (isPresent)
                             var fieldStatus = '<span style="color:red">Present in workspace</span>';
-                        UploadSNPProperties.propControls.addControl(Controls.CompoundHor([
+                        UploadProperties.propControls.addControl(Controls.CompoundHor([
                             Controls.Static(colname),
                             Controls.HorizontalSeparator(15),
                             choice,
                             Controls.HorizontalSeparator(15),
                             Controls.Static(fieldStatus),
                         ]));
-                        UploadSNPProperties.propControls.addControl(Controls.VerticalSeparator(7));
+                        UploadProperties.propControls.addControl(Controls.VerticalSeparator(7));
                     }
                 });
-                if (!hasSnpId) {
-                    alert('File does not have a column "snpid"');
+                if (!hasPrimKey) {
+                    alert('File does not have the required column "{primkey}"'.DQXformat({primkey: UploadProperties.primkey}));
                     return;
                 }
-                UploadSNPProperties.correctFileUploaded = true;
+                UploadProperties.correctFileUploaded = true;
                 //alert(JSON.stringify(resp));
-                UploadSNPProperties.ctrl_uploadresults.modifyValue('<b><br/>Click "Next" to proceed.</b>');
+                UploadProperties.ctrl_uploadresults.modifyValue('<b><br/>Click "Next" to proceed.</b>');
             });
         }
 
 
-        return UploadSNPProperties;
+        return UploadProperties;
     });
 
 

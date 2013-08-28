@@ -1,5 +1,5 @@
-define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadSNPProperties", "Wizards/EditSNPProperty"],
-    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, DataFetchers, SQL, MetaData, UploadSNPProperties, EditSNPProperty) {
+define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadProperties", "Wizards/EditProperty"],
+    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, DataFetchers, SQL, MetaData, UploadProperties, EditProperty) {
 
         ////////////// Utilities for async server communication in case of lengthy operations
 
@@ -68,14 +68,18 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         bitmap: 'Bitmaps/circle_red_small.png'
                     });
 
-                    var tableViewerButton = Application.getView('tableviewer').createActivationButton({
-                        content: "Table viewer",
-                        bitmap: 'Bitmaps/circle_red_small.png'
-                    });
+                    var tableButtons = [];
+                    $.each(MetaData.tableCatalog, function(idx, tableInfo) {
+                        var tableViewerButton = Application.getView('table_'+tableInfo.id).createActivationButton({
+                            content: "Table viewer for <b>"+tableInfo.name+"</b>",
+                            bitmap: 'Bitmaps/circle_red_small.png'
+                        });
+                        tableButtons.push(tableViewerButton);
+                    })
 
-                    var bt_addsnpprops = Controls.Button(null, { content: 'Upload SNP properties...'});
-                    bt_addsnpprops.setOnChanged(function() {
-                        UploadSNPProperties.execute(function() {});
+                    var bt_addprops = Controls.Button(null, { content: 'Upload custom properties...'});
+                    bt_addprops.setOnChanged(function() {
+                        UploadProperties.execute(function() {});
                     })
 
                     var bt_refresh = Controls.Button(null, { content: 'Refresh'}).setOnChanged(function() {
@@ -83,8 +87,9 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     })
 
                     this.panelButtons.addControl(Controls.CompoundVert([
-                        Controls.CompoundHor([browserButton, tableViewerButton]) ,
-                        Controls.CompoundHor([bt_addsnpprops, bt_refresh])
+                        Controls.CompoundHor([browserButton]),
+                        Controls.CompoundHor(tableButtons),
+                        Controls.CompoundHor([bt_addprops, bt_refresh])
                     ]));
 
                 }
@@ -94,24 +99,29 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     this.panelChannels.root.clear();
                     that.panelChannels.render();
-                    var root_customsnpprops = this.panelChannels.root.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Custom SNP properties</span>')).setCanSelect(false);
+
+                    var tableRoots = {}
+                    $.each(MetaData.tableCatalog, function(idx, tableInfo) {
+                        tableRoots[tableInfo.id] = that.panelChannels.root.addItem(FrameTree.Branch(null,'<span class="DQXLarge">'+tableInfo.name+'</span>')).setCanSelect(false);
+                    });
 
                     var br = that.panelChannels.root.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Genomic values</span>')).setCanSelect(false);
                     var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Individual points</span>')).setCanSelect(false);
                     var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Filterbank summarised</span>')).setCanSelect(false);
 
                     Application.getChannelInfo(function() {
-                        $.each(MetaData.customSnpProperties, function(idx, snpprop) {
-                            str = '<b>'+snpprop.propid+'</b>';
-                            str += ' ('+snpprop.datatype+')';
+                        $.each(MetaData.customProperties, function(idx, prop) {
+                            str = '<b>'+prop.propid+'</b>';
+                            str += ' ('+prop.datatype+')';
                             var openButton = Controls.LinkButton(null,{smartLink : true }).setOnChanged(function() {
-                                EditSNPProperty.execute(snpprop.propid);
+                                EditProperty.execute(prop.tableid, prop.propid);
                             });
                             var moveUpButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_up_1.png'), vertShift:-2 }).setOnChanged(function() {
                             });
                             var moveDownButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_down_1.png'), vertShift:-2 }).setOnChanged(function() {
                             });
-                            root_customsnpprops.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),moveUpButton,Controls.HorizontalSeparator(0),moveDownButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
+                            var root = tableRoots[prop.tableid];
+                            root.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),moveUpButton,Controls.HorizontalSeparator(0),moveDownButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
                         });
 
                         that.panelChannels.render();
@@ -123,7 +133,6 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
 
                 Msg.listen('', { type: 'ReloadChannelInfo' }, function () {
-                    //MetaData.customSnpPropertiesChanged = true;
                     that.updateChannelInfo(function() {
                         Application.getView('tableviewer').uptodate = false;
                         Application.getView('genomebrowser').uptodate = false;

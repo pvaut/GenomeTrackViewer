@@ -31,12 +31,14 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
         var TableViewerModule = {
 
-            init: function () {
+            init: function (tableid) {
                 // Instantiate the view object
                 var that = Application.View(
-                    'tableviewer',  // View ID
+                    'table_'+tableid,  // View ID
                     'Table viewer'  // View title
                 );
+
+                that.tableid = tableid;
 
                 //This function is called during the initialisation. Create the frame structure of the view here
                 that.createFrames = function(rootFrame) {
@@ -59,7 +61,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     this.theTableFetcher = DataFetchers.Table(
                         MetaData.serverUrl,
                         MetaData.database,
-                        'SNPCMB_'+MetaData.workspaceid
+                        that.tableid + 'CMB_' + MetaData.workspaceid
                     );
                     this.theTableFetcher.showDownload=true; //Allows the user to download the data in the table
 
@@ -115,6 +117,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 }
 
                 that.reLoad = function() {
+                    var tableInfo = MetaData.mapTableCatalog[that.tableid];
 
                     if (that.uptodate)
                         return;
@@ -124,44 +127,46 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     that.myTable.clearTableColumns();
 
                     // Add a column for chromosome
-                    var comp = that.myTable.createTableColumn(QueryTable.Column("Chrom.","chrom",0),"String",false);
+//                    var comp = that.myTable.createTableColumn(QueryTable.Column("Chrom.","chrom",0),"String",false);
 
                     // Add a column for position
-                    var comp = that.myTable.createTableColumn(QueryTable.Column("Position.","pos",0),"IntB64",false);
-                    that.myTable.addSortOption("Position", SQL.TableSort(['chrom', 'pos'])); // Define a joint sort action on both columns chrom+pos
+//                    var comp = that.myTable.createTableColumn(QueryTable.Column("Position.","pos",0),"IntB64",false);
+//                    that.myTable.addSortOption("Position", SQL.TableSort(['chrom', 'pos'])); // Define a joint sort action on both columns chrom+pos
 
 
                     // Add a column for the SNP identifier
-                    var comp = that.myTable.createTableColumn(QueryTable.Column("SNP ID","snpid",1),"String",true);
-                    comp.setToolTip('SNP identifier');  // Hover tooltip
+                    var comp = that.myTable.createTableColumn(QueryTable.Column(tableInfo.primkey,tableInfo.primkey,1),"String",true);
+                    //comp.setToolTip('SNP identifier');  // Hover tooltip
                     comp.setCellClickHandler(function(fetcher,downloadrownr) {
-                        var snpid=that.panelTable.getTable().getCellValue(downloadrownr,"snpid");
+                        var snpid=that.panelTable.getTable().getCellValue(downloadrownr,tableInfo.primkey);
                         Msg.send({ type: 'SnpPopup' }, snpid);
                     })
 
                     //Add some  more columns
 //                    that.myTable.createTableColumn(QueryTable.Column("Gene description","GeneDescription",1),"String",true);
-                    that.myTable.createTableColumn(QueryTable.Column("Mut type","MutType",1),"String",true);
-                    that.myTable.createTableColumn(QueryTable.Column("Mut name","MutName",1),"String",true);
+//                    that.myTable.createTableColumn(QueryTable.Column("Mut type","MutType",1),"String",true);
+//                    that.myTable.createTableColumn(QueryTable.Column("Mut name","MutName",1),"String",true);
 
 
                     //Create a column for each population frequency
-                    $.each(MetaData.customSnpProperties,function(idx,propInfo) {
-                        var col = that.myTable.createTableColumn(
-                            QueryTable.Column(
-                                propInfo.propid,       //Name of the column
-                                propInfo.propid,       //Id of the column in the database table
-                                1),               //Table part (1=right, scrolling)
-                            "Float3",             //Transfer encoding: float encoded in 3 base64 characters
-                            true                  // Column is sortable
-                        );
-                        //col.setToolTip(pop.name); //Provide a tool tip for the column
-                        //Define a callback when the user clicks on a column
-                        col.setHeaderClickHandler(function(id) {
-                            alert('column clicked '+id);
-                        })
-                        col.CellToText = funcFraction2Text //Show the frequency value with a fixed 3 digit format
-                        col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
+                    $.each(MetaData.customProperties,function(idx,propInfo) {
+                        if (propInfo.tableid == that.tableid) {
+                            var col = that.myTable.createTableColumn(
+                                QueryTable.Column(
+                                    propInfo.propid,       //Name of the column
+                                    propInfo.propid,       //Id of the column in the database table
+                                    1),               //Table part (1=right, scrolling)
+                                "Float3",             //Transfer encoding: float encoded in 3 base64 characters
+                                true                  // Column is sortable
+                            );
+                            //col.setToolTip(pop.name); //Provide a tool tip for the column
+                            //Define a callback when the user clicks on a column
+                            col.setHeaderClickHandler(function(id) {
+                                alert('column clicked '+id);
+                            })
+                            col.CellToText = funcFraction2Text //Show the frequency value with a fixed 3 digit format
+                            col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
+                        }
                     });
 
                     //we start by defining a query that returns everything
