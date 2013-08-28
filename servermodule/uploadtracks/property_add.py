@@ -123,8 +123,10 @@ def ResponseExecute(data, calculationObject):
         cur.execute("DROP TABLE {0}".format(tmptable))
 
         #Insert info about properties
+        cur.execute('SELECT MAX(ordr) FROM propertycatalog')
+        maxorder=int(cur.fetchone()[0])
         for prop in properties:
-            sql = 'INSERT INTO propertycatalog VALUES ("{0}","custom","float","{1}", "{2}")'.format(workspaceid, prop, tableid)
+            sql = 'INSERT INTO propertycatalog VALUES ("{0}","custom","float","{1}", "{2}", "{3}", {4})'.format(workspaceid, prop, tableid, prop, maxorder+1)
             print('=========== STATEMENT '+sql)
             cur.execute(sql)
 

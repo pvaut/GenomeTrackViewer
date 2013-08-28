@@ -135,7 +135,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
 
                     // Add a column for the SNP identifier
-                    var comp = that.myTable.createTableColumn(QueryTable.Column(tableInfo.primkey,tableInfo.primkey,1),"String",true);
+                    var comp = that.myTable.createTableColumn(QueryTable.Column(tableInfo.primkey,tableInfo.primkey,0),"String",true);
                     //comp.setToolTip('SNP identifier');  // Hover tooltip
                     comp.setCellClickHandler(function(fetcher,downloadrownr) {
                         var snpid=that.panelTable.getTable().getCellValue(downloadrownr,tableInfo.primkey);
@@ -151,21 +151,26 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     //Create a column for each population frequency
                     $.each(MetaData.customProperties,function(idx,propInfo) {
                         if (propInfo.tableid == that.tableid) {
+                            var encoding  = 'String';
+                            //var encoding  = 'Generic';
+                            if (propInfo.datatype=='float') {
+                                encoding  = 'Float3';
+                            }
                             var col = that.myTable.createTableColumn(
                                 QueryTable.Column(
-                                    propInfo.propid,       //Name of the column
-                                    propInfo.propid,       //Id of the column in the database table
-                                    1),               //Table part (1=right, scrolling)
-                                "Float3",             //Transfer encoding: float encoded in 3 base64 characters
-                                true                  // Column is sortable
+                                    propInfo.name,propInfo.propid,1),
+                                encoding,
+                                true
                             );
                             //col.setToolTip(pop.name); //Provide a tool tip for the column
                             //Define a callback when the user clicks on a column
                             col.setHeaderClickHandler(function(id) {
                                 alert('column clicked '+id);
                             })
-                            col.CellToText = funcFraction2Text //Show the frequency value with a fixed 3 digit format
-                            col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
+                            if (propInfo.datatype=='float') {
+                                col.CellToText = funcFraction2Text //Show the frequency value with a fixed 3 digit format
+                                col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
+                            }
                         }
                     });
 

@@ -51,7 +51,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 that.createFrames = function(rootFrame) {
                     rootFrame.makeGroupHor();
 
-                    this.frameButtons = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3));
+                    this.frameButtons = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3)).setFixedSize(Framework.dimX, 200);
                     this.frameChannels = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.7)).setDisplayTitle("Workspace overview");
                 }
 
@@ -77,7 +77,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         tableButtons.push(tableViewerButton);
                     })
 
-                    var bt_addprops = Controls.Button(null, { content: 'Upload custom properties...'});
+                    var bt_addprops = Controls.Button(null, { content: 'Upload custom properties...', width:120, height:40 });
                     bt_addprops.setOnChanged(function() {
                         UploadProperties.execute(function() {});
                     })
@@ -88,7 +88,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     this.panelButtons.addControl(Controls.CompoundVert([
                         Controls.CompoundHor([browserButton]),
-                        Controls.CompoundHor(tableButtons),
+                        Controls.CompoundVert(tableButtons),
                         Controls.CompoundHor([bt_addprops, bt_refresh])
                     ]));
 
@@ -111,7 +111,9 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     Application.getChannelInfo(function() {
                         $.each(MetaData.customProperties, function(idx, prop) {
-                            str = '<b>'+prop.propid+'</b>';
+                            str = '<b>'+prop.propid+'</b> ';
+                            if (prop.name!=prop.propid)
+                                str +=prop.name;
                             str += ' ('+prop.datatype+')';
                             var openButton = Controls.LinkButton(null,{smartLink : true }).setOnChanged(function() {
                                 EditProperty.execute(prop.tableid, prop.propid);

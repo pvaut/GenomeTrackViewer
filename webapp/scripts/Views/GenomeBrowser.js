@@ -186,7 +186,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     that.currentCustomSnpProperties = [];
                     that.visibilityControlsGroup.clear();
                     $.each(MetaData.customProperties,function(idx,propInfo) {
-                        if (propInfo.tableid=='SNP') {
+                        if ((propInfo.tableid=='SNP') && (propInfo.datatype=='float')) {
                             that.currentCustomSnpProperties.push(propInfo.propid);
                             //Create the channel in the browser that will contain the frequency values
                             var theChannel = ChannelYVals.Channel(propInfo.propid,
