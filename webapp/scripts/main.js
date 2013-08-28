@@ -85,10 +85,10 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
 
             Application.getChannelInfo = function(proceedFunction) {
                 var getter = DataFetchers.ServerDataGetter();
-                getter.addTable('snpproperties',['propid','datatype'],'propid',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
+                getter.addTable('propertycatalog',['propid','datatype','tableid'],'propid',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
                 getter.execute(MetaData.serverUrl,MetaData.database,
                     function() { // Upon completion of data fetching
-                        MetaData.customSnpProperties = getter.getTableRecords('snpproperties');
+                        MetaData.customSnpProperties = getter.getTableRecords('propertycatalog');
                         MetaData.mapCustomSnpProperties = {};
                         $.each(MetaData.customSnpProperties, function(idx, snpprop) {
                             MetaData.mapCustomSnpProperties[snpprop.propid] = snpprop;

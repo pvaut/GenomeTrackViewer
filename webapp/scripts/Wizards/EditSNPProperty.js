@@ -26,7 +26,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
         EditSNPProperty.delProperty = function(propid) {
             if (confirm('Are you sure you want to permanently delete property "{id}"'.DQXformat({ id:propid }))) {
-                asyncRequest("delsnpproperty",{ database: MetaData.database, workspaceid:MetaData.workspaceid, propid:propid }, function() {
+                var data = {};
+                data.database =  MetaData.database;
+                data.workspaceid = MetaData.workspaceid;
+                data.propid = propid;
+                data.tableid = 'SNP';
+                asyncRequest("property_del", data, function() {
                     Msg.send({ type: 'ReloadChannelInfo' });
                 });
             }

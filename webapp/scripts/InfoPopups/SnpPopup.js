@@ -14,7 +14,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             myurl.addUrlQueryItem("datatype", 'recordinfo');
             myurl.addUrlQueryItem("qry", SQL.WhereClause.encode(SQL.WhereClause.CompareFixed('snpid', '=', snpID)));
             myurl.addUrlQueryItem("database", MetaData.database);
-            myurl.addUrlQueryItem("tbname", 'snpinfo');
+            myurl.addUrlQueryItem("tbname", 'SNP');
             $.ajax({
                 url: myurl.toString(),
                 success: function (resp) {

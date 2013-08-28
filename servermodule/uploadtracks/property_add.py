@@ -18,8 +18,14 @@ def ResponseExecute(data, calculationObject):
     updateLock.release()
 
     with updateLock:
-        databaseName = data['database']
+        databaseName = DQXDbTools.ToSafeIdentifier(data['database'])
         workspaceid = DQXDbTools.ToSafeIdentifier(data['workspaceid'])
+        tableid = DQXDbTools.ToSafeIdentifier(data['tableid'])
+
+        db = DQXDbTools.OpenDatabase(databaseName)
+        primkey = Utils.GetTablePrimKey(tableid, db.cursor())
+        db.close()
+
 
         properties = []
         propertyTypes = {}
@@ -45,7 +51,7 @@ def ResponseExecute(data, calculationObject):
         # Remove all unneeded columns
         colNr = 0
         while colNr<tb.GetColCount():
-            if (tb.GetColName(colNr) not in propertyTypes) and (tb.GetColName(colNr) != 'snpid'):
+            if (tb.GetColName(colNr) not in propertyTypes) and (tb.GetColName(colNr) != primkey):
                 tb.DropCol(tb.GetColName(colNr))
             else:
                 colNr += 1
@@ -65,16 +71,16 @@ def ResponseExecute(data, calculationObject):
         os.remove(tmpfile_create)
         os.remove(tmpfile_dump)
 
-        sourcetable='SNPINFO_{0}'.format(workspaceid)
+        sourcetable=Utils.GetTableWorkspaceProperties(workspaceid, tableid)
 
         db = DQXDbTools.OpenDatabase(databaseName)
         cur = db.cursor()
 
         calculationObject.SetInfo('Indexing new information')
-        cur.execute('CREATE UNIQUE INDEX snpid ON {0}(snpid)'.format(tmptable))
+        cur.execute('CREATE UNIQUE INDEX {1} ON {0}({1})'.format(tmptable, primkey))
 
         # Dropping columns that will be replaced
-        cur.execute('SELECT propid FROM snpproperties WHERE (workspaceid="{0}") and (source="custom")'.format(workspaceid))
+        cur.execute('SELECT propid FROM propertycatalog WHERE (workspaceid="{0}") and (source="custom") and (tableid="{1}")'.format(workspaceid, tableid))
         existingProperties = []
         for row in cur.fetchall():
             existProperty= row[0]
@@ -83,7 +89,7 @@ def ResponseExecute(data, calculationObject):
         if len(existingProperties)>0:
             calculationObject.SetInfo('Removing outdated information')
             for prop in existingProperties:
-                cur.execute('DELETE FROM snpproperties WHERE (workspaceid="{0}") and (propid="{1}")'.format(workspaceid, prop))
+                cur.execute('DELETE FROM propertycatalog WHERE (workspaceid="{0}") and (propid="{1}") and (tableid="{2}")'.format(workspaceid, prop, tableid))
             sql = "ALTER TABLE {0} ".format(sourcetable)
             for prop in existingProperties:
                 if prop!=existingProperties[0]:
@@ -105,7 +111,7 @@ def ResponseExecute(data, calculationObject):
 
 
         calculationObject.SetInfo('Joining information')
-        sql = "update {0} left join {1} on {0}.snpid={1}.snpid set ".format(sourcetable,tmptable)
+        sql = "update {0} left join {1} on {0}.{2}={1}.{2} set ".format(sourcetable, tmptable, primkey)
         for prop in properties:
             if prop!=properties[0]:
                 sql+=" ,"
@@ -118,11 +124,11 @@ def ResponseExecute(data, calculationObject):
 
         #Insert info about properties
         for prop in properties:
-            sql = 'INSERT INTO snpproperties VALUES ("{0}","custom","float","{1}")'.format(workspaceid,prop)
+            sql = 'INSERT INTO propertycatalog VALUES ("{0}","custom","float","{1}", "{2}")'.format(workspaceid, prop, tableid)
             print('=========== STATEMENT '+sql)
             cur.execute(sql)
 
-        Utils.UpdateSnpInfoView(workspaceid, cur)
+        Utils.UpdateTableInfoView(workspaceid, tableid, cur)
 
         db.commit()
         db.close()
@@ -131,6 +137,5 @@ def ResponseExecute(data, calculationObject):
 
 
 def response(returndata):
-#    returndata['id']='WS'+str(uuid.uuid1()).replace('-', '_')
     return asyncresponder.RespondAsync(ResponseExecute, returndata)
 

@@ -78,7 +78,13 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         }
                     }
                 });
-                asyncRequest('addsnpproperties', { database: MetaData.database, workspaceid: MetaData.workspaceid, fileid:wiz.getResultValue(ctrl_trackFile.getID()), props:propChoiceString }, function(resp) {
+                var data = {};
+                data.database = MetaData.database;
+                data.workspaceid = MetaData.workspaceid;
+                data.fileid = wiz.getResultValue(ctrl_trackFile.getID());
+                data.props = propChoiceString;
+                data.tableid = 'SNP';
+                asyncRequest('property_add', data, function(resp) {
                     Msg.send({ type: 'ReloadChannelInfo' });
                     UploadSNPProperties.proceedFunction();
                 });

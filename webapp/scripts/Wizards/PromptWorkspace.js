@@ -15,7 +15,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 MetaData.database,
                 function() {
                     PromptWorkspace.workspaces = getter.getTableRecords('workspaces');
-                    if (true) {// Quick and dirty pick first, for development
+                    if (false) {// Quick and dirty pick first, for development
                         MetaData.workspaceid  = PromptWorkspace.workspaces[0].id;
                         Application.getChannelInfo(proceedFunction);
                     }
@@ -89,7 +89,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             data={};
             data.database = MetaData.database;
             data.name = name;
-            asyncRequest('createworkspace', data, function(resp) {
+            asyncRequest('workspace_create', data, function(resp) {
                 PromptWorkspace.reload(resp.id);
             });
         }
@@ -99,7 +99,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             data.database = MetaData.database;
             data.id = id;
             DQX.setProcessing();
-            DQX.customRequest(MetaData.serverUrl,'uploadtracks','delworkspace',data,function(resp) {
+            DQX.customRequest(MetaData.serverUrl,'uploadtracks','workspace_del',data,function(resp) {
                 DQX.stopProcessing();
                 if ('Error' in resp) {
                     alert(resp.Error);

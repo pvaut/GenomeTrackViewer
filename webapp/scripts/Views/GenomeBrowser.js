@@ -134,7 +134,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     that.dataFetcherSNPs = new DataFetchers.Curve(
                         MetaData.serverUrl,
                         MetaData.database,
-                        'snpinfo'
+                        'SNP'
                     );
 
                     var theChannel = ChannelPositions.Channel(null,
