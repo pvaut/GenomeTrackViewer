@@ -53,6 +53,7 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                     GenomeBrowser.init();
                     $.each(MetaData.tableCatalog, function(idx, tableInfo) {
                         TableViewer.init(tableInfo.id);
+                        tableInfo.tableViewId = 'table_'+tableInfo.id;
                     })
 
                     // Create a custom 'navigation button' that will appear in the right part of the app header
@@ -97,15 +98,9 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
 
                     Application.getChannelInfo = function(proceedFunction) {
                         var getter = DataFetchers.ServerDataGetter();
-                        getter.addTable('tablecatalog',['id','name','primkey'],'id');
                         getter.addTable('propertycatalog',['propid','datatype','tableid'],'propid',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
                         getter.execute(MetaData.serverUrl,MetaData.database,
                             function() { // Upon completion of data fetching
-                                MetaData.tableCatalog = getter.getTableRecords('tablecatalog');
-                                MetaData.mapTableCatalog = {};
-                                $.each(MetaData.tableCatalog, function(idx, table) {
-                                    MetaData.mapTableCatalog[table.id] = table;
-                                });
                                 MetaData.customProperties = getter.getTableRecords('propertycatalog');
                                 MetaData.mapCustomProperties = {};
                                 $.each(MetaData.customProperties, function(idx, prop) {

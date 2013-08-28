@@ -71,7 +71,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     var tableButtons = [];
                     $.each(MetaData.tableCatalog, function(idx, tableInfo) {
                         var tableViewerButton = Application.getView('table_'+tableInfo.id).createActivationButton({
-                            content: "Table viewer for <b>"+tableInfo.name+"</b>",
+                            content: "Table of <b>"+tableInfo.name+"</b>",
                             bitmap: 'Bitmaps/circle_red_small.png'
                         });
                         tableButtons.push(tableViewerButton);
@@ -134,7 +134,9 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                 Msg.listen('', { type: 'ReloadChannelInfo' }, function () {
                     that.updateChannelInfo(function() {
-                        Application.getView('tableviewer').uptodate = false;
+                        $.each(MetaData.tableCatalog, function(idx, tableInfo) {
+                            Application.getView(tableInfo.tableViewId).uptodate = false;
+                        });
                         Application.getView('genomebrowser').uptodate = false;
                     });
                 });
