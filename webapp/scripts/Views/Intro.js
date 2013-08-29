@@ -115,12 +115,12 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             if (prop.name!=prop.propid)
                                 str +=prop.propid;
                             str += ' ('+prop.datatype+')';
-                            var openButton = Controls.LinkButton(null,{smartLink : true, opacity:(prop.isCustom?1:0.25) }).setOnChanged(function() {
+                            var openButton = Controls.LinkButton(null,{smartLink : true, opacity:(prop.isCustom?1:0.15) }).setOnChanged(function() {
                                 EditProperty.execute(prop.tableid, prop.propid);
                             });
-                            var moveUpButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_up_1.png'), vertShift:-2, opacity:0.5 }).setOnChanged(function() {
+                            var moveUpButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_up_1.png'), vertShift:-2, opacity:0.35 }).setOnChanged(function() {
                             });
-                            var moveDownButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_down_1.png'), vertShift:-2, opacity:0.5 }).setOnChanged(function() {
+                            var moveDownButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_down_1.png'), vertShift:-2, opacity:0.35 }).setOnChanged(function() {
                             });
                             var root = tableRoots[prop.tableid];
                             root.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),moveUpButton,Controls.HorizontalSeparator(0),moveDownButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));

@@ -2,11 +2,13 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
     function (require, Application, Framework, Controls, Msg, DocEl, DQX, SQL, QueryTable, QueryBuilder, DataFetchers, MetaData) {
 
         //A helper function, turning a fraction into a 3 digit text string
-        var funcFraction2Text = function(vl) {
-            if (vl==null)
-                return '-'
-            else
-                return parseFloat(vl).toFixed(3);
+        var createFuncVal2Text = function(digits) {
+            return function(vl) {
+                if (vl==null)
+                    return '-';
+                else
+                    return parseFloat(vl).toFixed(digits);
+            }
         }
 
         //A helper function, turning a fraction into a color string
@@ -134,31 +136,20 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 //                    that.myTable.addSortOption("Position", SQL.TableSort(['chrom', 'pos'])); // Define a joint sort action on both columns chrom+pos
 
 
-                    // Add a column for the SNP identifier
-                    var comp = that.myTable.createTableColumn(QueryTable.Column(tableInfo.primkey,tableInfo.primkey,0),"String",true);
-                    //comp.setToolTip('SNP identifier');  // Hover tooltip
-                    comp.setCellClickHandler(function(fetcher,downloadrownr) {
-                        var snpid=that.panelTable.getTable().getCellValue(downloadrownr,tableInfo.primkey);
-                        Msg.send({ type: 'SnpPopup' }, snpid);
-                    })
-
-                    //Add some  more columns
-//                    that.myTable.createTableColumn(QueryTable.Column("Gene description","GeneDescription",1),"String",true);
-//                    that.myTable.createTableColumn(QueryTable.Column("Mut type","MutType",1),"String",true);
-//                    that.myTable.createTableColumn(QueryTable.Column("Mut name","MutName",1),"String",true);
-
-
                     //Create a column for each population frequency
                     $.each(MetaData.customProperties,function(idx,propInfo) {
-                        if (propInfo.tableid == that.tableid) {
+                        if ((propInfo.tableid == that.tableid) && (propInfo.settings.showInTable)) {
                             var encoding  = 'String';
                             //var encoding  = 'Generic';
+                            var tablePart = 1;
                             if (propInfo.datatype=='float') {
                                 encoding  = 'Float3';
                             }
+                            if (propInfo.isPrimKey)
+                                tablePart = 0;
                             var col = that.myTable.createTableColumn(
                                 QueryTable.Column(
-                                    propInfo.name,propInfo.propid,1),
+                                    propInfo.name,propInfo.propid,tablePart),
                                 encoding,
                                 true
                             );
@@ -167,8 +158,16 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             col.setHeaderClickHandler(function(id) {
                                 alert('column clicked '+id);
                             })
+
+                            if (propInfo.isPrimKey) {
+                                col.setCellClickHandler(function(fetcher,downloadrownr) {
+                                    var snpid=that.panelTable.getTable().getCellValue(downloadrownr,propInfo.propid);
+                                    Msg.send({ type: 'SnpPopup' }, snpid);
+                                })
+                            }
+
                             if (propInfo.datatype=='float') {
-                                col.CellToText = funcFraction2Text //Show the frequency value with a fixed 3 digit format
+                                col.CellToText = createFuncVal2Text(propInfo.settings.decimDigits);
                                 col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
                             }
                         }

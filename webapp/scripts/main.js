@@ -98,7 +98,7 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
 
                     Application.getChannelInfo = function(proceedFunction) {
                         var getter = DataFetchers.ServerDataGetter();
-                        getter.addTable('propertycatalog',['propid','datatype','tableid','source','name'],'ordr',
+                        getter.addTable('propertycatalog',['propid','datatype','tableid','source','name', 'settings'],'ordr',
                             SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
                             );
                         getter.execute(MetaData.serverUrl,MetaData.database,
@@ -106,7 +106,21 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                                 MetaData.customProperties = getter.getTableRecords('propertycatalog');
                                 $.each(MetaData.customProperties, function(idx, prop) {
                                     prop.isCustom = (prop.source=='custom');
+                                    if (prop.datatype=='float')
+                                        prop.isFloat = true;
                                     if (!prop.name) prop.name = prop.propid;
+                                    var settings = { showInTable: true, showInBrowser: false, channelName: '' };
+                                    if (prop.isFloat) {
+                                        settings.showInBrowser = true;
+                                        settings.minval = 0;
+                                        settings.maxval = 1;
+                                        settings.decimDigits = 2;
+                                    };
+                                    if (prop.propid == MetaData.mapTableCatalog[prop.tableid].primkey)
+                                        prop.isPrimKey = true;
+                                    if (prop.settings)
+                                        settings = $.extend(settings,JSON.parse(prop.settings));
+                                    prop.settings = settings;
                                 });
                                 if (proceedFunction) proceedFunction();
                             }

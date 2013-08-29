@@ -61,9 +61,47 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 var grouper = Controls.CompoundVert([]);
 
-                that.ctrl_name = Controls.Edit(null,{ size: 30, value: that.propInfo.name });
 
-                grouper.addControl(Controls.CompoundHor([Controls.Static('Name: '), that.ctrl_name]));
+
+                // General settings
+                var grp_general  = Controls.CompoundVert([]);
+                grp_general.setLegend('General').setAutoFillX(true);
+                grouper.addControl(grp_general);
+
+                that.ctrl_name = Controls.Edit(null,{ size: 30, value: that.propInfo.name });
+                grp_general.addControl(Controls.CompoundHor([Controls.Static('Name:&nbsp;&nbsp;'), that.ctrl_name]));
+
+                if (that.propInfo.isFloat) {
+                    that.ctrl_minval = Controls.Edit(null,{ size: 6, value: that.propInfo.settings.minval });
+                    that.ctrl_maxval = Controls.Edit(null,{ size: 6, value: that.propInfo.settings.maxval });
+                    grp_general.addControl(Controls.CompoundHor([Controls.Static('Value range:&nbsp;&nbsp;'), that.ctrl_minval, Controls.Static('&nbsp;&nbsp;-&nbsp;&nbsp;'), that.ctrl_maxval]));
+                    that.ctrl_decimdigits = Controls.Edit(null,{ size: 6, value: that.propInfo.settings.decimDigits });
+                    grp_general.addControl(Controls.CompoundHor([Controls.Static('Decimal digits:&nbsp;&nbsp;'), that.ctrl_decimdigits]));
+                }
+
+
+                // Table settings
+                var grp_table  = Controls.CompoundVert([]);
+                grp_table.setLegend('Table view').setAutoFillX(true);
+                grouper.addControl(grp_table);
+
+                that.ctrl_showInTable = Controls.Check(null,{ label: 'Show in table',value: that.propInfo.settings.showInTable });
+                grp_table.addControl(that.ctrl_showInTable);
+
+
+
+                // Genome browser settings
+                var grp_browser  = Controls.CompoundVert([]);
+                grp_browser.setLegend('Genome browser view').setAutoFillX(true);
+                grouper.addControl(grp_browser);
+
+                that.ctrl_showInBrowser = Controls.Check(null,{ label: 'Show in browser', value: that.propInfo.settings.showInBrowser });
+                grp_browser.addControl(that.ctrl_showInBrowser);
+
+                that.ctrl_channelName = Controls.Edit(null,{ size: 30, value: that.propInfo.settings.channelName });
+                grp_browser.addControl(Controls.CompoundHor([Controls.Static('Channel name:&nbsp;&nbsp;'), that.ctrl_channelName]));
+
+
 
 
                 that.panelBody.addControl(grouper);
@@ -74,6 +112,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
             that.onOK = function() {
 
+                var settings = {};
+                settings.showInTable = that.ctrl_showInTable.getValue();
+                settings.showInBrowser = that.ctrl_showInBrowser.getValue();
+                settings.channelName = that.ctrl_channelName.getValue();
+                if (that.propInfo.isFloat) {
+                    settings.decimDigits = parseInt(that.ctrl_decimdigits.getValue());
+                    settings.minval = parseFloat(that.ctrl_minval.getValue());
+                    settings.maxval = parseFloat(that.ctrl_maxval.getValue());
+                }
+
                 DQX.setProcessing();
                 var data ={};
                 data.database = MetaData.database;
@@ -81,6 +129,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 data.tableid = that.propInfo.tableid;
                 data.propid = that.propInfo.propid;
                 data.name = that.ctrl_name.getValue();
+                data.settings = JSON.stringify(settings);
+
 
                 that.close();
 

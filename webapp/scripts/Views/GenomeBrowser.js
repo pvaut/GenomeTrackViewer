@@ -185,26 +185,37 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     //Create a column for each population frequency
                     that.currentCustomSnpProperties = [];
                     that.visibilityControlsGroup.clear();
+                    var channelMap = {};
                     $.each(MetaData.customProperties,function(idx,propInfo) {
-                        if ((propInfo.tableid=='SNP') && (propInfo.datatype=='float')) {
+                        if ((propInfo.tableid=='SNP') && (propInfo.datatype=='float') && (propInfo.settings.showInBrowser)) {
                             that.currentCustomSnpProperties.push(propInfo.propid);
                             //Create the channel in the browser that will contain the frequency values
-                            var theChannel = ChannelYVals.Channel(propInfo.propid,
-                                { minVal: -0.5, maxVal: 1.5 } // range
-                            );
-                            theChannel
-                                .setTitle(propInfo.propid)
-                                .setHeight(150,true)
-                                .setMaxViewportSizeX(5.0e5)
-                                .setChangeYScale(true,true);
-                            that.panelBrowser.addChannel(theChannel, false);
+                            var channelId = propInfo.settings.channelName;
+                            var channelName = propInfo.settings.channelName;
+                            if (!channelId) {
+                                channelId = propInfo.propid;
+                                channelName = propInfo.name;
+                            }
+                            var theChannel = channelMap[channelId];
+                            if (!theChannel) {
+                                theChannel = ChannelYVals.Channel(propInfo.propid,
+                                    { minVal: propInfo.settings.minval, maxVal: propInfo.settings.maxval } // range
+                                );
+                                theChannel
+                                    .setTitle(channelName)
+                                    .setHeight(150,true)
+                                    .setMaxViewportSizeX(5.0e5)
+                                    .setChangeYScale(true,true);
+                                that.panelBrowser.addChannel(theChannel, false);
+                                var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, channelName, false);
+                                that.visibilityControlsGroup.addControl(ctrl_onoff);
+                                channelMap[channelId] = theChannel;
+                            }
 
                             var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, that.dataFetcherSNPProperties, propInfo.propid), true);//Create the component
                             plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
     //                        if (trackInfo.propertyDict.connect)
     //                            plotcomp.myPlotHints.makeDrawLines(1.0e99);
-                            var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, propInfo.propid, false);
-                            that.visibilityControlsGroup.addControl(ctrl_onoff);
                         }
                     });
 
