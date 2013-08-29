@@ -8,8 +8,8 @@ import Utils
 
 def response(returndata):
 
-    databaseName = returndata['database']
-    workspaceid = returndata['id']
+    databaseName = DQXDbTools.ToSafeIdentifier(returndata['database'])
+    workspaceid = DQXDbTools.ToSafeIdentifier(returndata['id'])
 
     db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()

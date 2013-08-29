@@ -83,6 +83,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         that.panelBrowser.render();
                     });
                     this.panelControls.addControl(ctrl_filtertype);
+                    this.panelControls.addControl(Controls.VerticalSeparator(12));
                     that.visibilityControlsGroup = this.panelControls.addControl(Controls.CompoundVert([]));
 
 
@@ -207,15 +208,24 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                     .setMaxViewportSizeX(5.0e5)
                                     .setChangeYScale(true,true);
                                 that.panelBrowser.addChannel(theChannel, false);
-                                var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, channelName, false);
-                                that.visibilityControlsGroup.addControl(ctrl_onoff);
                                 channelMap[channelId] = theChannel;
+                                theChannel.controls = Controls.CompoundVert([]);
+                                if (propInfo.settings.channelName)
+                                    theChannel.controls.setLegend(channelName).setAutoFillX(false);
+                                that.visibilityControlsGroup.addControl(theChannel.controls);
                             }
 
                             var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, that.dataFetcherSNPProperties, propInfo.propid), true);//Create the component
                             plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
-    //                        if (trackInfo.propertyDict.connect)
-    //                            plotcomp.myPlotHints.makeDrawLines(1.0e99);
+                            plotcomp.myPlotHints.color = DQX.parseColorString(propInfo.settings.channelColor);
+                            if (propInfo.settings.connectLines)
+                                plotcomp.myPlotHints.makeDrawLines(1.0e99);
+                            var label = propInfo.name;
+                            if (!plotcomp.myPlotHints.color.isBlack())
+                                label = '&nbsp;<span style="background-color:{cl}">&nbsp;&nbsp;</span>&nbsp;'.DQXformat({cl:plotcomp.myPlotHints.color.toString()}) + label;
+                            var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, label, false);
+                            theChannel.controls.addControl(ctrl_onoff);
+
                         }
                     });
 

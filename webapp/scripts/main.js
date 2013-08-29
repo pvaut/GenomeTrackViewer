@@ -109,7 +109,7 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                                     if (prop.datatype=='float')
                                         prop.isFloat = true;
                                     if (!prop.name) prop.name = prop.propid;
-                                    var settings = { showInTable: true, showInBrowser: false, channelName: '' };
+                                    var settings = { showInTable: true, showInBrowser: false, channelName: '', channelColor:'rgb(0,0,0)', connectLines: false };
                                     if (prop.isFloat) {
                                         settings.showInBrowser = true;
                                         settings.minval = 0;

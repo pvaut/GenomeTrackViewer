@@ -43,7 +43,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
 
         EditProperty.CreatePropertyDialogBox = function(tableid, propid) {
-            var that = PopupFrame.PopupFrame('propedit', {title:'Edit property', blocking:true });
+            var that = PopupFrame.PopupFrame('propedit', {title:'Edit property', blocking:true, sizeX:550, sizeY:550 });
 
             that.propInfo = MetaData.findProperty(tableid, propid);
 
@@ -59,13 +59,13 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.panelBody = Framework.Form(that.frameBody).setPadding(10);
                 that.panelButtons = Framework.Form(that.frameButtons);
 
-                var grouper = Controls.CompoundVert([]);
+                var grouper = Controls.CompoundVert([]).setMargin(25);
 
 
 
                 // General settings
                 var grp_general  = Controls.CompoundVert([]);
-                grp_general.setLegend('General').setAutoFillX(true);
+                grp_general.setLegend('General').setAutoFillX(true).setMargin(10);
                 grouper.addControl(grp_general);
 
                 that.ctrl_name = Controls.Edit(null,{ size: 30, value: that.propInfo.name });
@@ -82,7 +82,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 // Table settings
                 var grp_table  = Controls.CompoundVert([]);
-                grp_table.setLegend('Table view').setAutoFillX(true);
+                grp_table.setLegend('Table view').setAutoFillX(true).setMargin(10);
                 grouper.addControl(grp_table);
 
                 that.ctrl_showInTable = Controls.Check(null,{ label: 'Show in table',value: that.propInfo.settings.showInTable });
@@ -92,7 +92,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 // Genome browser settings
                 var grp_browser  = Controls.CompoundVert([]);
-                grp_browser.setLegend('Genome browser view').setAutoFillX(true);
+                grp_browser.setLegend('Genome browser view').setAutoFillX(true).setMargin(10);
                 grouper.addControl(grp_browser);
 
                 that.ctrl_showInBrowser = Controls.Check(null,{ label: 'Show in browser', value: that.propInfo.settings.showInBrowser });
@@ -101,6 +101,11 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.ctrl_channelName = Controls.Edit(null,{ size: 30, value: that.propInfo.settings.channelName });
                 grp_browser.addControl(Controls.CompoundHor([Controls.Static('Channel name:&nbsp;&nbsp;'), that.ctrl_channelName]));
 
+                that.ctrl_channelColor = Controls.ColorPicker(null, {label: 'Color', value: DQX.parseColorString(that.propInfo.settings.channelColor) });
+                grp_browser.addControl(that.ctrl_channelColor);
+
+                that.ctrl_connectLines = Controls.Check(null,{ label: 'Connect lines', value: that.propInfo.settings.connectLines });
+                grp_browser.addControl(that.ctrl_connectLines);
 
 
 
@@ -116,10 +121,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 settings.showInTable = that.ctrl_showInTable.getValue();
                 settings.showInBrowser = that.ctrl_showInBrowser.getValue();
                 settings.channelName = that.ctrl_channelName.getValue();
+                settings.channelColor = that.ctrl_channelColor.getValue().toString();
                 if (that.propInfo.isFloat) {
                     settings.decimDigits = parseInt(that.ctrl_decimdigits.getValue());
                     settings.minval = parseFloat(that.ctrl_minval.getValue());
                     settings.maxval = parseFloat(that.ctrl_maxval.getValue());
+                    settings.connectLines = that.ctrl_connectLines.getValue();
                 }
 
                 DQX.setProcessing();

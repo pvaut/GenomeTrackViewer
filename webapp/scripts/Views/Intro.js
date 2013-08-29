@@ -90,6 +90,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         Controls.CompoundHor([browserButton]),
                         Controls.CompoundVert(tableButtons),
                         Controls.CompoundHor([bt_addprops, bt_refresh])
+                        //Controls.ColorPicker(null, {label: 'Color', value: DQX.Color(1,1,0)})
                     ]));
 
                 }
@@ -119,8 +120,10 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                                 EditProperty.execute(prop.tableid, prop.propid);
                             });
                             var moveUpButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_up_1.png'), vertShift:-2, opacity:0.35 }).setOnChanged(function() {
+                                that.moveProperty(prop.tableid,prop.propid,-1);
                             });
                             var moveDownButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_down_1.png'), vertShift:-2, opacity:0.35 }).setOnChanged(function() {
+                                that.moveProperty(prop.tableid,prop.propid,+1);
                             });
                             var root = tableRoots[prop.tableid];
                             root.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),moveUpButton,Controls.HorizontalSeparator(0),moveDownButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
@@ -131,6 +134,20 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     });
 
 
+                }
+
+                that.moveProperty = function(tableid, propid, dir) {
+                    DQX.setProcessing();
+                    var data ={};
+                    data.database = MetaData.database;
+                    data.workspaceid = MetaData.workspaceid;
+                    data.tableid = tableid;
+                    data.propid = propid;
+                    data.dir = dir;
+                    DQX.customRequest(MetaData.serverUrl,'uploadtracks','property_move', data, function(resp) {
+                        DQX.stopProcessing();
+                        Msg.send({ type: 'ReloadChannelInfo' });
+                    });
                 }
 
 
