@@ -142,7 +142,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             var encoding  = 'String';
                             //var encoding  = 'Generic';
                             var tablePart = 1;
-                            if (propInfo.datatype=='float') {
+                            if (propInfo.datatype=='Value') {
                                 encoding  = 'Float3';
                             }
                             if (propInfo.isPrimKey)
@@ -166,7 +166,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                                 })
                             }
 
-                            if (propInfo.datatype=='float') {
+                            if (propInfo.isFloat) {
                                 col.CellToText = createFuncVal2Text(propInfo.settings.decimDigits);
                                 col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
                             }

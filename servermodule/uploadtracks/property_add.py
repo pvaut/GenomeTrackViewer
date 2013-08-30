@@ -51,9 +51,13 @@ def ResponseExecute(data, calculationObject):
         # Remove all unneeded columns
         colNr = 0
         while colNr<tb.GetColCount():
-            if (tb.GetColName(colNr) not in propertyTypes) and (tb.GetColName(colNr) != primkey):
-                tb.DropCol(tb.GetColName(colNr))
+            colName = tb.GetColName(colNr)
+            if (colName not in propertyTypes) and (colName != primkey):
+                tb.DropCol(colName)
             else:
+                if colName in propertyTypes:
+                    if propertyTypes[colName] == 'Value':
+                        tb.ConvertColToValue(colName)
                 colNr += 1
 
         # Import into SQL
@@ -105,7 +109,10 @@ def ResponseExecute(data, calculationObject):
         for prop in properties:
             if prop!=properties[0]:
                 sql+=" ,"
-            sql += "ADD COLUMN {0} float".format(prop) #!!! todo: make type dependent on source type
+            sqldatatype = 'varchar(50)'
+            if propertyTypes[prop] == 'Value':
+                sqldatatype = 'float'
+            sql += "ADD COLUMN {0} {1}".format(prop,sqldatatype)
         print('=========== STATEMENT '+sql)
         cur.execute(sql)
 
@@ -126,7 +133,8 @@ def ResponseExecute(data, calculationObject):
         for prop in properties:
             cur.execute('SELECT MAX(ordr) FROM propertycatalog')
             maxorder=int(cur.fetchone()[0])
-            sql = 'INSERT INTO propertycatalog VALUES ("{0}","custom","float","{1}", "{2}", "{3}", {4}, NULL)'.format(workspaceid, prop, tableid, prop, maxorder+1)
+            datatype=propertyTypes[prop]
+            sql = 'INSERT INTO propertycatalog VALUES ("{0}","custom","{5}","{1}", "{2}", "{3}", {4}, NULL)'.format(workspaceid, prop, tableid, prop, maxorder+1,datatype)
             print('=========== STATEMENT '+sql)
             cur.execute(sql)
 

@@ -188,7 +188,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     that.visibilityControlsGroup.clear();
                     var channelMap = {};
                     $.each(MetaData.customProperties,function(idx,propInfo) {
-                        if ((propInfo.tableid=='SNP') && (propInfo.datatype=='float') && (propInfo.settings.showInBrowser)) {
+                        if ((propInfo.tableid=='SNP') && (propInfo.isFloat) && (propInfo.settings.showInBrowser)) {
                             that.currentCustomSnpProperties.push(propInfo.propid);
                             //Create the channel in the browser that will contain the frequency values
                             var channelId = propInfo.settings.channelName;

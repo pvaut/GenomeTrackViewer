@@ -106,7 +106,7 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                                 MetaData.customProperties = getter.getTableRecords('propertycatalog');
                                 $.each(MetaData.customProperties, function(idx, prop) {
                                     prop.isCustom = (prop.source=='custom');
-                                    if (prop.datatype=='float')
+                                    if (prop.datatype=='Value')
                                         prop.isFloat = true;
                                     if (!prop.name) prop.name = prop.propid;
                                     var settings = { showInTable: true, showInBrowser: false, channelName: '', channelColor:'rgb(0,0,0)', connectLines: false };
