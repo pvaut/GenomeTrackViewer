@@ -31,8 +31,8 @@ require.config({
 
 
 
-require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "DQX/SQL", "DQX/DataFetcher/DataFetchers", "MetaData", "Views/Intro", "Views/GenomeBrowser", "Views/TableViewer", "InfoPopups/GenePopup", "InfoPopups/SnpPopup", "Wizards/PromptWorkspace" ],
-    function ($, Application, Framework, Msg, DQX, SQL, DataFetchers, MetaData, Intro, GenomeBrowser, TableViewer, GenePopup, SnpPopup, PromptWorkspace) {
+require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "DQX/SQL", "DQX/DataFetcher/DataFetchers", "MetaData", "Views/Intro", "Views/GenomeBrowser", "Views/TableViewer", "InfoPopups/GenePopup", "InfoPopups/ItemPopup", "Wizards/PromptWorkspace" ],
+    function ($, Application, Framework, Msg, DQX, SQL, DataFetchers, MetaData, Intro, GenomeBrowser, TableViewer, GenePopup, ItemPopup, PromptWorkspace) {
         $(function () {
 
             var getter = DataFetchers.ServerDataGetter();
@@ -46,7 +46,7 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                     });
 
                     GenePopup.init();
-                    SnpPopup.init();
+                    ItemPopup.init();
 
                     // Initialise all the views in the application
                     Intro.init();

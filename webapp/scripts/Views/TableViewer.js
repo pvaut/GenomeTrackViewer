@@ -161,8 +161,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                             if (propInfo.isPrimKey) {
                                 col.setCellClickHandler(function(fetcher,downloadrownr) {
-                                    var snpid=that.panelTable.getTable().getCellValue(downloadrownr,propInfo.propid);
-                                    Msg.send({ type: 'SnpPopup' }, snpid);
+                                    var itemid=that.panelTable.getTable().getCellValue(downloadrownr,propInfo.propid);
+                                    Msg.send({ type: 'ItemPopup' }, { tableid: that.tableid, itemid: itemid } );
                                 })
                             }
 

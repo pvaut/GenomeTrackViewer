@@ -155,7 +155,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     })
                     //Define a function tht will be called when the user clicks a snp
                     theChannel.setClickHandler(function(snpid) {
-                        Msg.send({ type: 'SnpPopup' }, snpid);//Send a message that should trigger showing the snp popup
+                        Msg.send({ type: 'ItemPopup' }, { tableid:'SNP', itemid:snpid } );//Send a message that should trigger showing the snp popup
                     })
                     that.panelBrowser.addChannel(theChannel, false);//Add the channel to the browser
                 }
