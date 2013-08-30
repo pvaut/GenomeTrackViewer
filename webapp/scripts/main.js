@@ -108,6 +108,8 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                                     prop.isCustom = (prop.source=='custom');
                                     if (prop.datatype=='Value')
                                         prop.isFloat = true;
+                                    if (prop.datatype=='Boolean')
+                                        prop.isBoolean = true;
                                     if (!prop.name) prop.name = prop.propid;
                                     var settings = { showInTable: true, showInBrowser: false, channelName: '', channelColor:'rgb(0,0,0)', connectLines: false };
                                     if (prop.isFloat) {

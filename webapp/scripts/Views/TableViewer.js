@@ -145,6 +145,9 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             if (propInfo.datatype=='Value') {
                                 encoding  = 'Float3';
                             }
+                            if (propInfo.datatype=='Boolean') {
+                                encoding  = 'Int';
+                            }
                             if (propInfo.isPrimKey)
                                 tablePart = 0;
                             var col = that.myTable.createTableColumn(
@@ -153,6 +156,11 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                                 encoding,
                                 true
                             );
+
+                            if (propInfo.datatype=='Boolean') {
+                                col.setDataType_MultipleChoiceInt([{id:0, name:'No'}, {id:1, name:'Yes'}]);
+                            }
+
                             //col.setToolTip(pop.name); //Provide a tool tip for the column
                             //Define a callback when the user clicks on a column
                             col.setHeaderClickHandler(function(id) {
@@ -169,6 +177,10 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             if (propInfo.isFloat) {
                                 col.CellToText = createFuncVal2Text(propInfo.settings.decimDigits);
                                 col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
+                            }
+                            if (propInfo.isBoolean) {
+                                col.CellToText = function(vl) { return vl?'Yes':'No'; };
+                                col.CellToColor = function(vl) { return vl?DQX.Color(0.75,0.85,0.75):DQX.Color(1.0,0.9,1.0); }
                             }
                         }
                     });

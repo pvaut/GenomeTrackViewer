@@ -110,7 +110,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     if (colname==UploadProperties.primkey)
                         hasPrimKey = true;
                     else {
-                        var choice  = Controls.Combo('propchoice_'+colname,{label:'', states:[{id:'', name:'Ignore'}, {id:'Text', name:'Upload (text)'}, {id:'Value', name:'Upload (value)'}], val:['']});
+                        var choice  = Controls.Combo('propchoice_'+colname,{label:'', states:[{id:'', name:'Ignore'}, {id:'Text', name:'Upload (text)'}, {id:'Value', name:'Upload (value)'}, {id:'Boolean', name:'Upload (boolean)'}], val:['']});
                         var fieldStatus = 'New field';
                         var isPresent = false;
                         $.each(MetaData.customProperties, function(idx, prop) {

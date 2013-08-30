@@ -10,6 +10,14 @@ import threading
 
 updateLock = threading.Lock()
 
+def convertToBooleanInt(vl):
+    if vl is None:
+        return None
+    if (vl.lower() == 'true') or (vl.lower() == 'yes') or (vl.lower() == 'y') or (vl == '1') or (vl == '1.0'):
+        return 1
+    if (vl.lower() == 'false') or (vl.lower() == 'no') or (vl.lower() == 'n') or (vl == '0') or (vl == '0.0'):
+        return 0
+    return None
 
 def ResponseExecute(data, calculationObject):
 
@@ -57,6 +65,9 @@ def ResponseExecute(data, calculationObject):
             else:
                 if colName in propertyTypes:
                     if propertyTypes[colName] == 'Value':
+                        tb.ConvertColToValue(colName)
+                    if propertyTypes[colName] == 'Boolean':
+                        tb.MapCol(colName,convertToBooleanInt)
                         tb.ConvertColToValue(colName)
                 colNr += 1
 
