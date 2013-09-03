@@ -17,9 +17,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 { id: 'id', name: 'ID', datatype: 'Text', propid: that.tableInfo.primkey, data: null, visible:false, required:true },
                 { id: 'xaxis', name: 'X axis', datatype: 'Value', propid: null, data: null, visible:true, required:true },
                 { id: 'yaxis', name: 'Y axis', datatype: 'Value', propid: null, data: null, visible:true, required:true },
+                { id: 'color', name: 'Point color', datatype: 'Text', propid: null, visible:true, data: null },
                 { id: 'size', name: 'Point size', datatype: 'Value', propid: null, visible:true, data: null },
                 { id: 'style', name: 'Point style', datatype: 'Text', propid: null, visible:true, data: null },
-                { id: 'color', name: 'Point color', datatype: 'Text', propid: null, visible:true, data: null },
             ];
 
             that.mapPlotAspects = {};
@@ -77,30 +77,97 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     that.fetchCount += 1;
                     that.panelPlot.render();
                     fetcher.getData(SQL.WhereClause.Trivial(), that.tableInfo.primkey, function (data) {
-                        var values = data[aspectInfo.propid];
-                        aspectInfo.data = values;
-                        if (aspectInfo.datatype == 'Value') {
-                            var minval=1.0e99;
-                            var maxval= -1.0e99;
-                            for (var i=0; i<values.length; i++) {
-                                if (values[i]!=null) {
-                                    if (minval > values[i]) minval = values[i];
-                                    if (maxval < values[i]) maxval = values[i];
-                                }
-                            }
-                            aspectInfo.minval = minval;
-                            aspectInfo.maxval = maxval;
-                            var range = aspectInfo.maxval-aspectInfo.minval;
-                            aspectInfo.maxval += range/20;
-                            aspectInfo.minval -= range/20;
-                        }
+                        aspectInfo.data = data[aspectInfo.propid];
+                        that.processAspectData(plotAspectID);
                         that.fetchCount -= 1;
                         that.panelPlot.render();
                     });
                 }
-                else
+                else {
+                    that.processAspectData(plotAspectID);
                     that.panelPlot.render();
+                }
             };
+
+            that.processAspectData = function(plotAspectID) {
+                var aspectInfo = that.mapPlotAspects[plotAspectID];
+                var values = aspectInfo.data;
+                if ((aspectInfo.datatype == 'Value')&&(values)) {
+                    var minval=1.0e99;
+                    var maxval= -1.0e99;
+                    for (var i=0; i<values.length; i++) {
+                        if (values[i]!=null) {
+                            if (minval > values[i]) minval = values[i];
+                            if (maxval < values[i]) maxval = values[i];
+                        }
+                    }
+                    aspectInfo.minval = minval;
+                    aspectInfo.maxval = maxval;
+                    var range = aspectInfo.maxval-aspectInfo.minval;
+                    aspectInfo.maxval += range/20;
+                    aspectInfo.minval -= range/20;
+                }
+
+                if (plotAspectID=='id') {
+                    var sortIndex = [];
+                    for (var i=0; i<values.length; i++)
+                        sortIndex.push(i);
+                    that.sortIndex = sortIndex;
+                }
+
+                if (plotAspectID=='size') {
+
+                    if (values) {// Make sure the points are sorted largest to smallest
+                        var sortWithIndeces = function (toSort) {
+                            for (var i = 0; i < toSort.length; i++) {
+                                toSort[i] = [toSort[i], i];
+                            }
+                            toSort.sort(function(left, right) {
+                                return left[0] < right[0] ? -1 : 1;
+                            });
+                            toSort.sortIndices = [];
+                            for (var j = 0; j < toSort.length; j++) {
+                                toSort.sortIndices.push(toSort[j][1]);
+                                toSort[j] = toSort[j][0];
+                            }
+                            return toSort;
+                        }
+
+                        var tosort = [];
+                        for (var i=0; i<values.length; i++) tosort.push(-values[i]);
+
+                        sortWithIndeces(tosort);
+                        that.sortIndex = tosort.sortIndices;
+                    }
+
+
+                }
+
+
+                if (plotAspectID=='color') {// Create categorical data
+                    aspectInfo.catData = null;
+                    if (values) {
+                        var maxCatCount = DQX.niceColours.length;
+                        var catMap = {};
+                        var catData = [];
+                        var catCount = 0;
+                        for (var i=0; i<values.length; i++) {
+                            if (values[i] in catMap)
+                                catData.push(catMap[values[i]])
+                            else {
+                                if (catCount<maxCatCount) {
+                                    catMap[values[i]] = catCount;
+                                    catData.push(catCount);
+                                    catCount++;
+                                }
+                                else
+                                    catData.push(-1)
+                            }
+                        }
+                        aspectInfo.catData = catData;
+                    }
+                }
+            }
 
 
             that.draw = function(drawInfo) {
@@ -135,6 +202,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 var aspectY = that.mapPlotAspects['yaxis'];
                 var valX = aspectX.data;
                 var valY = aspectY.data;
+                var valColorCat = that.mapPlotAspects['color'].catData;
+                var valSize = that.mapPlotAspects['size'].data;
                 var scaleX = (drawInfo.sizeX-marginX) / (aspectX.maxval - aspectX.minval);
                 var offsetX = marginX - aspectX.minval*scaleX;
                 var scaleY = - (drawInfo.sizeY-marginY) / (aspectY.maxval - aspectY.minval);
@@ -186,7 +255,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         ctx.rotate(-Math.PI/2);
                         ctx.fillText(vl.toFixed(scale.textDecimalCount),0,0);
                         ctx.restore();
-                        //                        ctx.fillText(vl.toFixed(scale.textDecimalCount),marginX-10,py);
                     }
                 }
                 ctx.restore();
@@ -194,13 +262,72 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 // Draw points
                 ctx.fillStyle="#000000";
-                for (var i=0; i<valX.length; i++) {
-                    if ( (valX[i]!=null) && (valY[i]!=null) ) {
-                        var px = valX[i] * scaleX + offsetX;
-                        var py = valY[i] * scaleY + offsetY;
-                        ctx.fillRect(px-1,py-1,3,3);
+                ctx.strokeStyle="#000000";
+
+                var smallPoints = (!valSize)&&(valX.length>10000);
+                var sortIndex = that.sortIndex;
+
+                if (smallPoints) {
+                    for (var i=0; i<valX.length; i++) {
+                        var ii = sortIndex[i];
+                        if ( (valX[ii]!=null) && (valY[ii]!=null) ) {
+                            var px = Math.round(valX[ii] * scaleX + offsetX);
+                            var py = Math.round(valY[ii] * scaleY + offsetY);
+                            if (valColorCat) {
+                                ctx.strokeStyle=DQX.niceColours[valColorCat[ii]];
+                            }
+                            ctx.beginPath();
+                            ctx.moveTo(px - 2, py - 0.5);
+                            ctx.lineTo(px + 1, py - 0.5);
+                            ctx.moveTo(px - 0.5, py - 2);
+                            ctx.lineTo(px - 0.5, py + 1);
+                            ctx.stroke();
+                        }
                     }
                 }
+
+                if ((!smallPoints) && (!valSize)) {
+                    for (var i=0; i<valX.length; i++) {
+                        var ii = sortIndex[i];
+                        if ( (valX[ii]!=null) && (valY[ii]!=null) ) {
+                            var px = /*Math.round*/(valX[ii] * scaleX + offsetX);
+                            var py = /*Math.round*/(valY[ii] * scaleY + offsetY);
+                            if (valColorCat) {
+                                ctx.fillStyle=DQX.niceColours[valColorCat[ii]];
+                                ctx.strokeStyle=DQX.niceColours[valColorCat[ii]];
+                            }
+                            ctx.beginPath();
+                            ctx.arc(px, py, 2, 0, 2 * Math.PI, false);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                if (valSize) {
+                    ctx.fillStyle='rgb(220,220,220)';
+                    ctx.strokeStyle='rgb(128,128,128)';
+                    var sizeMin = that.mapPlotAspects['size'].minval;
+                    var sizeMax = that.mapPlotAspects['size'].maxval;
+                    for (var i=0; i<valX.length; i++) {
+                        var ii = sortIndex[i];
+                        if ( (valX[ii]!=null) && (valY[ii]!=null) ) {
+                            var px = /*Math.round*/(valX[ii] * scaleX + offsetX);
+                            var py = /*Math.round*/(valY[ii] * scaleY + offsetY);
+                            var rd = (valSize[ii]-sizeMin)/(sizeMax-sizeMin)*10+2;
+                            if (valColorCat) {
+                                ctx.fillStyle=DQX.niceColours[valColorCat[ii]];
+                            }
+                            ctx.beginPath();
+                            ctx.arc(px, py, rd, 0, 2 * Math.PI, false);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                        }
+                    }
+                }
+
 
                 that.plotPresent = true;
             };
