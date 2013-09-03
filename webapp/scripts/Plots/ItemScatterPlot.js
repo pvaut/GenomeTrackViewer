@@ -29,11 +29,11 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
 
             that.createFrames = function() {
-                that.frameRoot.makeGroupVert();
+                that.frameRoot.makeGroupHor();
                 that.frameButtons = that.frameRoot.addMemberFrame(Framework.FrameFinal('', 0.3))
-                    .setFixedSize(Framework.dimY, 70);
-                that.framePlot = that.frameRoot.addMemberFrame(Framework.FrameFinal('', 0.7))
                     .setAllowScrollBars(false,true);
+                that.framePlot = that.frameRoot.addMemberFrame(Framework.FrameFinal('', 0.7))
+                    .setAllowScrollBars(false,false);
             };
 
             that.createPanels = function() {
@@ -43,8 +43,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.panelPlot.onMouseDown = that.onMouseDown;
                 that.panelButtons = Framework.Form(that.frameButtons).setPadding(5);
 
-                var controls = [];
-                $.each(that.plotAspects,function(idx, plotAspect) {
+                var pickControls = Controls.CompoundGrid();
+                $.each(that.plotAspects,function(aspectIdx, plotAspect) {
                     if (plotAspect.visible) {
                         var propList = [ {id:'', name:'-- None --'}];
                         $.each(MetaData.customProperties, function(idx, prop) {
@@ -52,12 +52,15 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                 propList.push({ id:prop.propid, name:prop.name });
                         });
                         plotAspect.picker = Controls.Combo(null,{ label:'', states: propList }).setOnChanged( function() { that.fetchData(plotAspect.id)} );
-                        controls.push( Controls.CompoundVert([Controls.Static(plotAspect.name+':'), plotAspect.picker]).setTreatAsBlock() );
-                        controls.push(Controls.HorizontalSeparator(15));
+                        pickControls.setItem(aspectIdx, 0, Controls.Static(plotAspect.name+':'));
+                        pickControls.setItem(aspectIdx, 1, plotAspect.picker);
+                        //controls.push(Controls.VerticalSeparator(7));
                     }
                 });
 
-                that.panelButtons.addControl(Controls.CompoundHor(controls));
+                that.colorLegend = Controls.Html(null,'');
+
+                that.panelButtons.addControl(Controls.CompoundVert([pickControls, that.colorLegend]));
 
                 that.fetchData('id');
             };
@@ -70,6 +73,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     aspectInfo.propid = aspectInfo.picker.getValue();
                 if (aspectInfo.propid) {
                     var fetcher = DataFetchers.RecordsetFetcher(MetaData.serverUrl, MetaData.database, that.tableInfo.id + 'CMB_' + MetaData.workspaceid);
+                    fetcher.setMaxResultCount(999999);
                     var encoding='ST';
                     if (aspectInfo.datatype=='Value')
                         encoding = 'F3';
@@ -146,8 +150,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 if (plotAspectID=='color') {// Create categorical data
                     aspectInfo.catData = null;
+                    var legendStr = '';
                     if (values) {
-                        var maxCatCount = DQX.niceColours.length;
+                        var maxCatCount = DQX.standardColors.length-1;
                         var catMap = {};
                         var catData = [];
                         var catCount = 0;
@@ -161,11 +166,15 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                     catCount++;
                                 }
                                 else
-                                    catData.push(-1)
+                                    catData.push(maxCatCount);
                             }
                         }
                         aspectInfo.catData = catData;
+                        $.each(catMap,function(key,value) {
+                            legendStr+='<span style="background-color:{cl}">&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;{name}<br>'.DQXformat({cl:DQX.standardColors[value].toString(), name:key});
+                        });
                     }
+                    that.colorLegend.modifyValue(legendStr);
                 }
             }
 
@@ -195,7 +204,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 var marginX = 40;
                 var marginY = 40;
                 ctx.fillStyle="rgb(220,220,220)";
-                ctx.fillRect(0,0,marginX,drawInfo.sizeX);
+                ctx.fillRect(0,0,marginX,drawInfo.sizeY);
                 ctx.fillRect(0,drawInfo.sizeY-marginY,drawInfo.sizeX,marginY);
 
                 var aspectX = that.mapPlotAspects['xaxis'];
@@ -274,7 +283,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             var px = Math.round(valX[ii] * scaleX + offsetX);
                             var py = Math.round(valY[ii] * scaleY + offsetY);
                             if (valColorCat) {
-                                ctx.strokeStyle=DQX.niceColours[valColorCat[ii]];
+                                ctx.strokeStyle=DQX.standardColors[valColorCat[ii]].toStringCanvas();
                             }
                             ctx.beginPath();
                             ctx.moveTo(px - 2, py - 0.5);
@@ -293,8 +302,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             var px = /*Math.round*/(valX[ii] * scaleX + offsetX);
                             var py = /*Math.round*/(valY[ii] * scaleY + offsetY);
                             if (valColorCat) {
-                                ctx.fillStyle=DQX.niceColours[valColorCat[ii]];
-                                ctx.strokeStyle=DQX.niceColours[valColorCat[ii]];
+                                ctx.fillStyle=DQX.standardColors[valColorCat[ii]].toStringCanvas();
+                                ctx.strokeStyle=DQX.standardColors[valColorCat[ii]].toStringCanvas();
                             }
                             ctx.beginPath();
                             ctx.arc(px, py, 2, 0, 2 * Math.PI, false);
@@ -317,7 +326,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             var py = /*Math.round*/(valY[ii] * scaleY + offsetY);
                             var rd = (valSize[ii]-sizeMin)/(sizeMax-sizeMin)*10+2;
                             if (valColorCat) {
-                                ctx.fillStyle=DQX.niceColours[valColorCat[ii]];
+                                ctx.fillStyle=DQX.standardColors[valColorCat[ii]].toStringCanvas();
                             }
                             ctx.beginPath();
                             ctx.arc(px, py, rd, 0, 2 * Math.PI, false);
