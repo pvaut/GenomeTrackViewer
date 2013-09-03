@@ -42,6 +42,7 @@ require(["jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Utils", "
                     MetaData.tableCatalog = getter.getTableRecords('tablecatalog');
                     MetaData.mapTableCatalog = {};
                     $.each(MetaData.tableCatalog, function(idx, table) {
+                        table.currentQuery = null;
                         MetaData.mapTableCatalog[table.id] = table;
                     });
 

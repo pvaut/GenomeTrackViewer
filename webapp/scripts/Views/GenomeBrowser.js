@@ -24,10 +24,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     Msg.listen("", { type: 'JumpgenomeRegion' }, that.onJumpGenomeRegion);
                     Msg.listen("", { type: 'JumpgenomePosition' }, that.onJumpGenomePosition);
 
-                    Msg.listen("", {type: 'QueryChanged'}, function(scope,query) {
-                        that.currentUserQuery = query;
-                        if (that.filterByQuery) {
-                            that.dataFetcherSNPProperties.setUserQuery2(query);
+                    Msg.listen("", {type: 'QueryChanged'}, function(scope, tableid) {
+                        if (tableid=='SNP') {
+                            that.currentUserQuery = MetaData.mapTableCatalog['SNP'].currentQuery;
+                            if (that.filterByQuery) {
+                                that.dataFetcherSNPProperties.setUserQuery2(that.currentUserQuery);
+                            }
                         }
                     });
 

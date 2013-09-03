@@ -1,5 +1,5 @@
-define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadProperties", "Wizards/EditProperty"],
-    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, DataFetchers, SQL, MetaData, UploadProperties, EditProperty) {
+define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadProperties", "Wizards/EditProperty", "Plots/ItemScatterPlot"],
+    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, DataFetchers, SQL, MetaData, UploadProperties, EditProperty, ItemScatterPlot) {
 
         ////////////// Utilities for async server communication in case of lengthy operations
 
@@ -86,10 +86,21 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         Msg.send({ type: 'ReloadChannelInfo' });
                     })
 
+                    var plotButtons = [];
+                    $.each(MetaData.tableCatalog, function(idx, tableInfo) {
+                        var plotButton = Controls.Button(null, { content: tableInfo.name+' scatterplot', width:120, height:40 });
+                        plotButton .setOnChanged(function() {
+                            ItemScatterPlot.Create(tableInfo.id);
+                        })
+                        plotButtons.push(plotButton);
+                    })
+
+
                     this.panelButtons.addControl(Controls.CompoundVert([
                         Controls.CompoundHor([browserButton]),
                         Controls.CompoundVert(tableButtons),
-                        Controls.CompoundHor([bt_addprops, bt_refresh])
+                        Controls.CompoundHor([bt_addprops, bt_refresh]),
+                        Controls.CompoundVert(plotButtons),
                         //Controls.ColorPicker(null, {label: 'Color', value: DQX.Color(1,1,0)})
                     ]));
 
@@ -141,8 +152,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     var data ={};
                     data.database = MetaData.database;
                     data.workspaceid = MetaData.workspaceid;
-                    data.tableid = tableid;
-                    data.propid = propid;
+                    data.tableid = that.propInfo.tableid;
+                    data.propid = that.propInfo.propid;
                     data.dir = dir;
                     DQX.customRequest(MetaData.serverUrl,'uploadtracks','property_move', data, function(resp) {
                         DQX.stopProcessing();

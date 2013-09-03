@@ -180,7 +180,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             }
                             if (propInfo.isBoolean) {
                                 col.CellToText = function(vl) { return vl?'Yes':'No'; };
-                                col.CellToColor = function(vl) { return vl?DQX.Color(0.75,0.85,0.75):DQX.Color(1.0,0.9,1.0); }
+                                col.CellToColor = function(vl) { return vl?DQX.Color(0.75,0.85,0.75):DQX.Color(1.0,0.9,0.8); }
                             }
                         }
                     });
@@ -190,7 +190,11 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     // Define an "advanced query" panel
                     this.panelTable.createPanelAdvancedQuery(this.frameQueryAdvanced, function() {
-                        Msg.send({ type: 'QueryChanged'}, that.panelTable.panelAdvancedQueryBuilder.getQuery() );
+                        var theQuery = that.panelTable.panelAdvancedQueryBuilder.getQuery();
+                        if (theQuery.isTrivial)
+                            theQuery = null;
+                        MetaData.mapTableCatalog[that.tableid].currentQuery = theQuery;
+                        Msg.send({ type: 'QueryChanged'}, that.tableid );
                     });
 
                 }
