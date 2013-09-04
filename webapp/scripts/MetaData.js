@@ -21,8 +21,7 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
 
 
         //////// Information about the chromosomes
-        //////// Information about the chromosomes
-        MetaData.chromosomes = [
+/*        MetaData.chromosomes = [
             { id: 'Pf3D7_01_v3', len: 0.640851 },
             { id: 'Pf3D7_02_v3', len: 0.947102 },
             { id: 'Pf3D7_03_v3', len: 1.067971 },
@@ -38,7 +37,7 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
             { id: 'Pf3D7_13_v3', len: 2.925236 },
             { id: 'Pf3D7_14_v3', len: 3.291936 }
         ];
-        $.each(MetaData.chromosomes, function (idx, chr) { chr.name = chr.id; });
+        $.each(MetaData.chromosomes, function (idx, chr) { chr.name = chr.id; });*/
 
         MetaData.showClusterData = false;
 

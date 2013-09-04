@@ -36,14 +36,16 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
         $(function () {
 
             function Start_Part1() {
-                PromptDataSet.execute(Start_Part2);
-/*                var getter = DataFetchers.ServerDataGetter();
-                getter.addTable('datasetindex',['id','name'],'id');
-                getter.execute(MetaData.serverUrl,'datasetindex',
-                    function() { // Upon completion of data fetching
-                        MetaData.datasets = getter.getTableRecords('datasetindex');
-                        PromptDataSet.execute(Start_Part2);
-                    });*/
+                PromptDataSet.execute(function() {
+                    var getter = DataFetchers.ServerDataGetter();
+                    getter.addTable('chromosomes',['id','len'],null);
+                    getter.execute(MetaData.serverUrl,MetaData.database,
+                        function() { // Upon completion of data fetching
+                            MetaData.chromosomes = getter.getTableRecords('chromosomes');
+                            $.each(MetaData.chromosomes, function (idx, chr) { chr.name = chr.id; });
+                            Start_Part2();
+                        });
+                });
             }
 
 
