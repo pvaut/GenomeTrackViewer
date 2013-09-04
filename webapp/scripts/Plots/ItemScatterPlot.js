@@ -117,6 +117,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     for (var i=0; i<values.length; i++)
                         sortIndex.push(i);
                     that.sortIndex = sortIndex;
+                    that.panelPlot.setDirectDedraw(values.length<10000);
                 }
 
                 if (plotAspectID=='size') {
@@ -161,8 +162,14 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 }
             }
 
-
             that.draw = function(drawInfo) {
+                if (that.panelPlot._directRedraw)
+                    that.drawImpl(drawInfo);
+                else
+                    DQX.executeProcessing(function() { that.drawImpl(drawInfo); });
+            }
+
+            that.drawImpl = function(drawInfo) {
                 that.plotPresent = false;
                 var ctx = drawInfo.ctx;
                 if (that.fetchCount > 0) {
@@ -321,7 +328,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         }
                     }
                 }
-
 
                 that.plotPresent = true;
             };
