@@ -120,31 +120,14 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 }
 
                 if (plotAspectID=='size') {
-
                     if (values) {// Make sure the points are sorted largest to smallest
-                        var sortWithIndeces = function (toSort) {
-                            for (var i = 0; i < toSort.length; i++) {
-                                toSort[i] = [toSort[i], i];
-                            }
-                            toSort.sort(function(left, right) {
-                                return left[0] < right[0] ? -1 : 1;
-                            });
-                            toSort.sortIndices = [];
-                            for (var j = 0; j < toSort.length; j++) {
-                                toSort.sortIndices.push(toSort[j][1]);
-                                toSort[j] = toSort[j][0];
-                            }
-                            return toSort;
-                        }
-
-                        var tosort = [];
-                        for (var i=0; i<values.length; i++) tosort.push(-values[i]);
-
-                        sortWithIndeces(tosort);
-                        that.sortIndex = tosort.sortIndices;
+                        var idx = [];
+                        for (i=0; i<values.length; i++)
+                            idx.push(i);
+                        that.sortIndex = _.sortBy(idx, function(val,key) {
+                            return -values[key];
+                        });
                     }
-
-
                 }
 
 
@@ -275,9 +258,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 var smallPoints = (!valSize)&&(valX.length>10000);
                 var sortIndex = that.sortIndex;
+                var ptcount = valX.length;
 
                 if (smallPoints) {
-                    for (var i=0; i<valX.length; i++) {
+                    for (var i=0; i<ptcount; i++) {
                         var ii = sortIndex[i];
                         if ( (valX[ii]!=null) && (valY[ii]!=null) ) {
                             var px = Math.round(valX[ii] * scaleX + offsetX);
@@ -295,8 +279,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     }
                 }
 
+//                ptcount = Math.min(ptcount,5000);
                 if ((!smallPoints) && (!valSize)) {
-                    for (var i=0; i<valX.length; i++) {
+                    for (var i=0; i<ptcount; i++) {
                         var ii = sortIndex[i];
                         if ( (valX[ii]!=null) && (valY[ii]!=null) ) {
                             var px = /*Math.round*/(valX[ii] * scaleX + offsetX);
@@ -319,7 +304,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     ctx.strokeStyle='rgb(128,128,128)';
                     var sizeMin = that.mapPlotAspects['size'].minval;
                     var sizeMax = that.mapPlotAspects['size'].maxval;
-                    for (var i=0; i<valX.length; i++) {
+                    for (var i=0; i<ptcount; i++) {
                         var ii = sortIndex[i];
                         if ( (valX[ii]!=null) && (valY[ii]!=null) ) {
                             var px = /*Math.round*/(valX[ii] * scaleX + offsetX);

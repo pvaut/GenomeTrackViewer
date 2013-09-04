@@ -23,7 +23,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             if (resp.progress)
                                 str+=' ('+(100*resp.progress).toFixed(0)+'%)';
                             $('#calculationprogressbox').html('<h3>'+str+'</h3>');
-                            setTimeout(poll, 1000);
+                            setTimeout(poll, 2000);
                         }
                     }
                 });
