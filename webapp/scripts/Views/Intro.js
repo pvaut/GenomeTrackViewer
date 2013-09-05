@@ -51,7 +51,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 that.createFrames = function(rootFrame) {
                     rootFrame.makeGroupHor();
 
-                    this.frameButtons = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3)).setFixedSize(Framework.dimX, 200);
+                    this.frameButtons = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3)).setFixedSize(Framework.dimX, 400);
                     this.frameChannels = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.7)).setDisplayTitle("Workspace overview");
                 }
 
@@ -88,7 +88,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     var plotButtons = [];
                     $.each(MetaData.tableCatalog, function(idx, tableInfo) {
-                        var plotButton = Controls.Button(null, { content: tableInfo.name+' scatterplot', width:120, height:40 });
+                        var plotButton = Controls.Button(null, { content: '<b>'+tableInfo.name+'</b> scatterplot', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
                         plotButton .setOnChanged(function() {
                             ItemScatterPlot.Create(tableInfo.id);
                         })
@@ -96,11 +96,10 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     })
 
 
-                    this.panelButtons.addControl(Controls.CompoundVert([
-                        Controls.CompoundHor([browserButton]),
-                        Controls.CompoundVert(tableButtons),
-                        Controls.CompoundHor([bt_addprops, bt_refresh]),
-                        Controls.CompoundVert(plotButtons),
+                    this.panelButtons.addControl(Controls.CompoundHor([
+                        Controls.CompoundVert(tableButtons).setTreatAsBlock(),
+                        Controls.CompoundVert(plotButtons).setTreatAsBlock(),
+                        Controls.CompoundVert([browserButton, bt_addprops, bt_refresh]).setTreatAsBlock(),
                         //Controls.ColorPicker(null, {label: 'Color', value: DQX.Color(1,1,0)})
                     ]));
 

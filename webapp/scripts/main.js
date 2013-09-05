@@ -59,6 +59,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                         MetaData.mapTableCatalog = {};
                         $.each(MetaData.tableCatalog, function(idx, table) {
                             table.currentQuery = null;
+                            table.currentSelection = {};
                             MetaData.mapTableCatalog[table.id] = table;
                         });
 

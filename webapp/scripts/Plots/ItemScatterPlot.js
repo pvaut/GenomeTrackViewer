@@ -1,5 +1,5 @@
-define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/SQL", "DQX/DocEl", "DQX/Utils", "DQX/Wizard", "DQX/Popup", "DQX/PopupFrame", "DQX/DataFetcher/DataFetchers", "MetaData"],
-    function (require, base64, Application, Framework, Controls, Msg, SQL, DocEl, DQX, Wizard, Popup, PopupFrame, DataFetchers, MetaData) {
+define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/SQL", "DQX/DocEl", "DQX/Utils", "DQX/Wizard", "DQX/Popup", "DQX/PopupFrame", "DQX/FrameCanvas", "DQX/DataFetcher/DataFetchers", "MetaData"],
+    function (require, base64, Application, Framework, Controls, Msg, SQL, DocEl, DQX, Wizard, Popup, PopupFrame, FrameCanvas, DataFetchers, MetaData) {
 
         var ItemScatterPlot = {};
 
@@ -29,14 +29,24 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.mapPlotAspects[aspect.id] = aspect;
             });
 
-            that.eventid = DQX.getNextUniqueID();
-            Msg.listen(that.eventid,{ type: 'QueryChanged'}, function(scope,tableid) {
+            that.eventids = [];
+            var eventid = DQX.getNextUniqueID();that.eventids.push(eventid);
+            Msg.listen(eventid,{ type: 'QueryChanged'}, function(scope,tableid) {
                 if (that.tableInfo.id==tableid)
                     that.reloadAll();
             } );
 
+            that.eventids = [];
+            var eventid = DQX.getNextUniqueID();that.eventids.push(eventid);
+            Msg.listen(eventid,{ type: 'SelectionUpdated'}, function(scope,tableid) {
+                if (that.tableInfo.id==tableid)
+                    that.reDraw();
+            } );
+
             that.onClose = function() {
-                Msg.delListener(that.eventid);
+                $.each(that.eventids,function(idx,eventid) {
+                    Msg.delListener(eventid);
+                });
             };
 
 
@@ -50,10 +60,11 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             };
 
             that.createPanels = function() {
-                that.panelPlot = Framework.Canvas(that.framePlot);
+                that.panelPlot = FrameCanvas(that.framePlot);
                 that.panelPlot.draw = that.draw;
                 that.panelPlot.getToolTipInfo = that.getToolTipInfo;
-                that.panelPlot.onMouseDown = that.onMouseDown;
+                that.panelPlot.onMouseClick = that.onMouseClick;
+                that.panelPlot.onSelected = that.onSelected;
                 that.panelButtons = Framework.Form(that.frameButtons).setPadding(5);
 
 
@@ -97,6 +108,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 });
             }
 
+            that.reDraw = function() {
+                that.panelPlot.render();
+            }
+
 
             that.fetchData = function(plotAspectID) {
                 var aspectInfo = that.mapPlotAspects[plotAspectID];
@@ -122,10 +137,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         if ((that.queryTypeControl.getValue()=='query') && (that.tableInfo.currentQuery) )
                             query = that.tableInfo.currentQuery;
                         var requestID = DQX.getNextUniqueID();
-                        that.tableInfo.requestID = requestID;
+                        aspectInfo.requestID = requestID;
                         fetcher.getData(query, that.tableInfo.primkey, function (data) {
                             that.fetchCount -= 1;
-                            if (that.tableInfo.requestID != requestID) {//request must be outdated, so we don't handle it
+                            if (aspectInfo.requestID != requestID) {//request must be outdated, so we don't handle it
                                 return;
                             }
                             aspectInfo.data = data[aspectInfo.propid];
@@ -245,6 +260,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 ctx.fillRect(0,0,marginX,drawInfo.sizeY);
                 ctx.fillRect(0,drawInfo.sizeY-marginY,drawInfo.sizeX,marginY);
 
+                var ids = that.mapPlotAspects['id'].data;
                 var aspectX = that.mapPlotAspects['xaxis'];
                 var aspectY = that.mapPlotAspects['yaxis'];
                 var valX = aspectX.data;
@@ -310,6 +326,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 // Draw points
                 ctx.fillStyle="#000000";
                 ctx.strokeStyle="#000000";
+                var selectionMap = that.tableInfo.currentSelection;
+                var selpsX = [];
+                var selpsY = [];
 
                 var smallPoints = (!valSize)&&(valX.length>10000);
                 var sortIndex = that.sortIndex;
@@ -324,6 +343,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             if (valColorCat) {
                                 ctx.strokeStyle=DQX.standardColors[valColorCat[ii]].toStringCanvas();
                             }
+                            if (selectionMap[ids[ii]]) {
+                                selpsX.push(px);
+                                selpsY.push(py);
+                            }
                             ctx.beginPath();
                             ctx.moveTo(px - 2, py - 0.5);
                             ctx.lineTo(px + 1, py - 0.5);
@@ -334,7 +357,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     }
                 }
 
-//                ptcount = Math.min(ptcount,5000);
                 if ((!smallPoints) && (!valSize)) {
                     for (var i=0; i<ptcount; i++) {
                         var ii = sortIndex[i];
@@ -345,6 +367,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                 ctx.fillStyle=DQX.standardColors[valColorCat[ii]].toStringCanvas();
                                 ctx.strokeStyle=DQX.standardColors[valColorCat[ii]].toStringCanvas();
                             }
+                            if (selectionMap[ids[ii]]) {
+                                selpsX.push(px);
+                                selpsY.push(py);
+                            }
                             ctx.beginPath();
                             ctx.arc(px, py, 2, 0, 2 * Math.PI, false);
                             ctx.closePath();
@@ -352,6 +378,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             ctx.stroke();
                         }
                     }
+                }
+
+                ctx.fillStyle='rgba(255,0,0,0.25)';
+                ctx.strokeStyle='rgba(255,0,0,0.75)';
+                for (var i=0; i<selpsX.length; i++) {
+                    ctx.beginPath();
+                    ctx.arc(selpsX[i], selpsY[i], 4, 0, 2 * Math.PI, false);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
                 }
 
                 if (valSize) {
@@ -425,12 +461,38 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 };
             };
 
-            that.onMouseDown = function(ev, info) {
+            that.onMouseClick = function(ev, info) {
                 var tooltip = that.getToolTipInfo(info.x, info.y);
                 if (tooltip) {
                     Msg.send({ type: 'ItemPopup' }, { tableid: that.tableInfo.id, itemid: tooltip.itemid } );
                 }
             }
+
+            that.onSelected = function(minX, minY, maxX, maxY, shiftPressed, controlPressed, altPressed) {
+                if (!that.plotPresent) return;
+                var ids =that.mapPlotAspects['id'].data;
+                var aspectX = that.mapPlotAspects['xaxis'];
+                var aspectY = that.mapPlotAspects['yaxis'];
+                var valX = aspectX.data;
+                var valY = aspectY.data;
+                if ((!shiftPressed)&&(!controlPressed))
+                    that.tableInfo.currentSelection = {};
+                for (var i=0; i<valX.length; i++) {
+                    if ( (valX[i]!=null) && (valY[i]!=null) ) {
+                        var px = valX[i] * scaleX + offsetX;
+                        var py = valY[i] * scaleY + offsetY;
+                        if ((px>=minX) && (px<=maxX) && (py>minY) && (py<=maxY)) {
+                            if (!controlPressed)
+                                that.tableInfo.currentSelection[ids[i]] = true;
+                            else
+                                delete that.tableInfo.currentSelection[ids[i]];
+                        }
+                    }
+                }
+                Msg.broadcast({type:'SelectionUpdated'}, that.tableInfo.id);
+                that.panelPlot.render();
+            }
+
 
 
 
