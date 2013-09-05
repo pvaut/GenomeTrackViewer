@@ -2,6 +2,8 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
     function (DQX, Controls, Msg, Popup) {
         var MetaData = {};
 
+        MetaData.quickLoad = true;
+
 
         MetaData.serverUrl="http://localhost:8000/app01";
         //MetaData.serverUrl="http://localhost/DQXServer/app";

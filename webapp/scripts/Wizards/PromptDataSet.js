@@ -13,9 +13,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             getter.execute(MetaData.serverUrl,'datasetindex',
                 function() {
                     PromptDataSet.datasets = getter.getTableRecords('datasetindex');
-                    if (false) {// Quick and dirty pick first, for development
-                        //MetaData.workspaceid  = PromptDataSet.workspaces[0].id;
-                        //Application.getChannelInfo(proceedFunction);
+                    if (MetaData.quickLoad) { // Quick & dirty pick one, for development purposes
+                        MetaData.database = 'pf21viewtracks';
+                        PromptDataSet.proceedFunction();
                     }
                     else
                         PromptDataSet.execute2();
