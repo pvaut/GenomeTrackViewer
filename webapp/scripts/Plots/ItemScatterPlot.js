@@ -29,6 +29,17 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.mapPlotAspects[aspect.id] = aspect;
             });
 
+            that.eventid = DQX.getNextUniqueID();
+            Msg.listen(that.eventid,{ type: 'QueryChanged'}, function(scope,tableid) {
+                if (that.tableInfo.id==tableid)
+                    that.reloadAll();
+            } );
+
+            that.onClose = function() {
+                Msg.delListener(that.eventid);
+            };
+
+
 
             that.createFrames = function() {
                 that.frameRoot.makeGroupHor();
@@ -44,6 +55,11 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.panelPlot.getToolTipInfo = that.getToolTipInfo;
                 that.panelPlot.onMouseDown = that.onMouseDown;
                 that.panelButtons = Framework.Form(that.frameButtons).setPadding(5);
+
+
+                that.queryTypeControl = Controls.Combo(null, { label: 'Selection:', states:[{id:'all', name:'All'}, {id:'query', name:'Current query'}], value:'all'}).setOnChanged(function() {
+                    that.reloadAll();
+                });
 
                 var pickControls = Controls.CompoundGrid();
                 $.each(that.plotAspects,function(aspectIdx, plotAspect) {
@@ -62,10 +78,24 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 that.colorLegend = Controls.Html(null,'');
 
-                that.panelButtons.addControl(Controls.CompoundVert([pickControls, that.colorLegend]));
+                that.panelButtons.addControl(Controls.CompoundVert([
+                    that.queryTypeControl,
+                    Controls.VerticalSeparator(10),
+                    pickControls,
+                    that.colorLegend
+                ]));
 
                 that.fetchData('id');
             };
+
+
+            that.reloadAll = function() {
+                that.propDataMap = {};
+                $.each(that.plotAspects, function(idx, plotAspect) {
+                    if (plotAspect.propid)
+                        that.fetchData(plotAspect.id);
+                });
+            }
 
 
             that.fetchData = function(plotAspectID) {
@@ -88,11 +118,19 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         fetcher.addColumn(aspectInfo.propid, encoding);
                         that.fetchCount += 1;
                         that.panelPlot.render();
-                        fetcher.getData(SQL.WhereClause.Trivial(), that.tableInfo.primkey, function (data) {
+                        var query = SQL.WhereClause.Trivial();
+                        if ((that.queryTypeControl.getValue()=='query') && (that.tableInfo.currentQuery) )
+                            query = that.tableInfo.currentQuery;
+                        var requestID = DQX.getNextUniqueID();
+                        that.tableInfo.requestID = requestID;
+                        fetcher.getData(query, that.tableInfo.primkey, function (data) {
+                            that.fetchCount -= 1;
+                            if (that.tableInfo.requestID != requestID) {//request must be outdated, so we don't handle it
+                                return;
+                            }
                             aspectInfo.data = data[aspectInfo.propid];
                             that.propDataMap[aspectInfo.propid] = aspectInfo.data;
                             that.processAspectData(plotAspectID);
-                            that.fetchCount -= 1;
                             that.panelPlot.render();
                         });
                     }

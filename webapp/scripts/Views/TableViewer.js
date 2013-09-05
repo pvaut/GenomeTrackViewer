@@ -194,7 +194,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         if (theQuery.isTrivial)
                             theQuery = null;
                         MetaData.mapTableCatalog[that.tableid].currentQuery = theQuery;
-                        Msg.send({ type: 'QueryChanged'}, that.tableid );
+                        Msg.broadcast({ type: 'QueryChanged'}, that.tableid );
                     });
 
                 }
