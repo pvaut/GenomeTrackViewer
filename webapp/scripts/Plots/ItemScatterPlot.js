@@ -21,6 +21,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 { id: 'color', name: 'Point color', datatype: 'Text', propid: null, visible:true, data: null },
                 { id: 'size', name: 'Point size', datatype: 'Value', propid: null, visible:true, data: null },
                 { id: 'style', name: 'Point style', datatype: 'Text', propid: null, visible:true, data: null },
+                { id: 'label', name: 'Hover label', datatype: '', propid: null, visible:true, data: null },
             ];
 
             that.mapPlotAspects = {};
@@ -49,7 +50,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     if (plotAspect.visible) {
                         var propList = [ {id:'', name:'-- None --'}];
                         $.each(MetaData.customProperties, function(idx, prop) {
-                            if ( (prop.datatype==plotAspect.datatype) && (prop.tableid==that.tableInfo.id) )
+                            if ( ((prop.datatype==plotAspect.datatype)||(!plotAspect.datatype)) && (prop.tableid==that.tableInfo.id) )
                                 propList.push({ id:prop.propid, name:prop.name });
                         });
                         plotAspect.picker = Controls.Combo(null,{ label:'', states: propList }).setOnChanged( function() { that.fetchData(plotAspect.id)} );
@@ -366,13 +367,23 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     }
                 }
                 if (bestidx<0) return null;
+                var str ='';
+                $.each(that.plotAspects, function(idx, plotAspect) {
+                    if (plotAspect.data) {
+                        var propInfo = MetaData.findProperty(that.tableInfo.id,plotAspect.propid);
+                        if (str.length>0) str += '<br>';
+                        if (plotAspect.id=='label') str +='<b>';
+                        str += propInfo.name+': '+propInfo.toDisplayString(plotAspect.data[bestidx]);
+                        if (plotAspect.id=='label') str +='</b>';
+                    }
+                });
                 return {
                     itemid: ids[bestidx],
                     ID: 'IDX'+bestidx,
                     px: valX[bestidx] * scaleX + offsetX,
                     py: valY[bestidx] * scaleY + offsetY,
                     showPointer:true,
-                    content: ids[bestidx]
+                    content: str
                 };
             };
 

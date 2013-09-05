@@ -38,10 +38,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             var propertyMap = {};
             $.each(MetaData.customProperties, function(idx,propInfo) {
                 if (propInfo.tableid == itemInfo.tableid) {
-                    var str = data[propInfo.propid];
-                    if (propInfo.isFloat)
-                        str = parseFloat(str).toFixed(propInfo.settings.decimDigits);
-                    propertyMap[propInfo.name] = str;
+                    propertyMap[propInfo.name] = propInfo.toDisplayString(data[propInfo.propid]);
                 }
             });
             content += DQX.CreateKeyValueTable(propertyMap);

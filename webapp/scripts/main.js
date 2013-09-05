@@ -140,6 +140,12 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                                         if (prop.settings)
                                             settings = $.extend(settings,JSON.parse(prop.settings));
                                         prop.settings = settings;
+                                        prop.toDisplayString = function(vl) { return vl; }
+                                        if (prop.isFloat)
+                                            prop.toDisplayString = function(vl) { return parseFloat(vl).toFixed(prop.settings.decimDigits); }
+                                        if (prop.isBoolean)
+                                            prop.toDisplayString = function(vl) { return parseInt(vl)?'Yes':'No'; }
+
                                     });
                                     if (proceedFunction) proceedFunction();
                                 }

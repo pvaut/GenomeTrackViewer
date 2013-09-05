@@ -174,12 +174,12 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                                 })
                             }
 
+                            col.CellToText = propInfo.toDisplayString;
+
                             if (propInfo.isFloat) {
-                                col.CellToText = createFuncVal2Text(propInfo.settings.decimDigits);
                                 col.CellToColor = funcFraction2Color; //Create a background color that reflects the value
                             }
                             if (propInfo.isBoolean) {
-                                col.CellToText = function(vl) { return vl?'Yes':'No'; };
                                 col.CellToColor = function(vl) { return vl?DQX.Color(0.75,0.85,0.75):DQX.Color(1.0,0.9,0.8); }
                             }
                         }
