@@ -12,6 +12,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             var that = PopupFrame.PopupFrame(tableInfo.name + ' scatterplot', {title:'Scatter plot', blocking:false, sizeX:700, sizeY:550 });
             that.tableInfo = tableInfo;
             that.fetchCount = 0;
+            that.propDataMap = {};
 
             that.plotAspects = [
                 { id: 'id', name: 'ID', datatype: 'Text', propid: that.tableInfo.primkey, data: null, visible:false, required:true },
@@ -72,20 +73,28 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 if (aspectInfo.visible)
                     aspectInfo.propid = aspectInfo.picker.getValue();
                 if (aspectInfo.propid) {
-                    var fetcher = DataFetchers.RecordsetFetcher(MetaData.serverUrl, MetaData.database, that.tableInfo.id + 'CMB_' + MetaData.workspaceid);
-                    fetcher.setMaxResultCount(999999);
-                    var encoding='ST';
-                    if (aspectInfo.datatype=='Value')
-                        encoding = 'F3';
-                    fetcher.addColumn(aspectInfo.propid, encoding);
-                    that.fetchCount += 1;
-                    that.panelPlot.render();
-                    fetcher.getData(SQL.WhereClause.Trivial(), that.tableInfo.primkey, function (data) {
-                        aspectInfo.data = data[aspectInfo.propid];
+                    if (that.propDataMap[aspectInfo.propid]) {
+                        aspectInfo.data = that.propDataMap[aspectInfo.propid];
                         that.processAspectData(plotAspectID);
-                        that.fetchCount -= 1;
                         that.panelPlot.render();
-                    });
+                    }
+                    else {
+                        var fetcher = DataFetchers.RecordsetFetcher(MetaData.serverUrl, MetaData.database, that.tableInfo.id + 'CMB_' + MetaData.workspaceid);
+                        fetcher.setMaxResultCount(999999);
+                        var encoding='ST';
+                        if (aspectInfo.datatype=='Value')
+                            encoding = 'F3';
+                        fetcher.addColumn(aspectInfo.propid, encoding);
+                        that.fetchCount += 1;
+                        that.panelPlot.render();
+                        fetcher.getData(SQL.WhereClause.Trivial(), that.tableInfo.primkey, function (data) {
+                            aspectInfo.data = data[aspectInfo.propid];
+                            that.propDataMap[aspectInfo.propid] = aspectInfo.data;
+                            that.processAspectData(plotAspectID);
+                            that.fetchCount -= 1;
+                            that.panelPlot.render();
+                        });
+                    }
                 }
                 else {
                     that.processAspectData(plotAspectID);
