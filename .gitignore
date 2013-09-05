@@ -2,3 +2,4 @@
 *.py~
 .idea
 webapp/scripts/DQX
+servermodule/uploadtracks/VTTable.py
