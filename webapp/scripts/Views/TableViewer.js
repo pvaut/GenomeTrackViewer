@@ -42,6 +42,14 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                 that.tableid = tableid;
 
+                Msg.listen('',{ type: 'SelectionUpdated'}, function(scope,tableid) {
+                    if (that.tableid==tableid) {
+                        if (that.myTable)
+                            that.myTable.render();
+                    }
+                } );
+
+
                 //This function is called during the initialisation. Create the frame structure of the view here
                 that.createFrames = function(rootFrame) {
                     rootFrame.makeGroupHor();//Declare the root frame as a horizontally divided set of subframes
@@ -127,6 +135,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     this.theTableFetcher.resetAll();
                     that.myTable.clearTableColumns();
+
+                    that.myTable.createSelectionColumn(tableInfo.id, tableInfo.primkey, tableInfo);
 
                     // Add a column for chromosome
 //                    var comp = that.myTable.createTableColumn(QueryTable.Column("Chrom.","chrom",0),"String",false);

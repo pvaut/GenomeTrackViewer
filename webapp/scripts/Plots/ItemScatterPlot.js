@@ -490,7 +490,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     }
                 }
                 Msg.broadcast({type:'SelectionUpdated'}, that.tableInfo.id);
-                that.panelPlot.render();
+                //that.panelPlot.render();
             }
 
 

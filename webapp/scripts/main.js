@@ -60,6 +60,13 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                         $.each(MetaData.tableCatalog, function(idx, table) {
                             table.currentQuery = null;
                             table.currentSelection = {};
+                            table.isItemSelected = function(id) { return table.currentSelection[id]; }
+                            table.selectItem = function(id, newState) {
+                                if (newState)
+                                    table.currentSelection[id] = true;
+                                else
+                                    delete table.currentSelection[id];
+                            }
                             MetaData.mapTableCatalog[table.id] = table;
                         });
 
