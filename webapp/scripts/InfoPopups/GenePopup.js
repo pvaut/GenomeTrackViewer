@@ -38,6 +38,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             content += '<b>Name</b>: '+data.fname+'<br/>';
             content += '<b>Position</b>: '+data.chromid+':'+data.fstart+'-'+data.fstop+'<br/>';
 
+
+            var button_snps = Controls.Button(null, { buttonClass: 'DQXToolButton2', content: 'Show SNPs in this gene', width:120, height:50 }).setOnChanged(function() {
+//                Application.activateView('table_SNP');
+                Msg.send({type: 'ShowSNPsInRange'}, { chrom:data.chromid, start:data.fstart, stop:data.fstop });
+                Popup.closeIfNeeded(popupid);
+            });
+            content += button_snps.renderHtml();
+
+            content += '<br>';
+
             var button_plasmodb = Controls.Button(null, { content: 'Find in PlasmoDb' }).setOnChanged(function() {
                 window.open("http://plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&source_id={id}&project_id=PlasmoDB".DQXformat({id:data.fid}), '_blank');
                 //
@@ -49,7 +59,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             });
             content += button_genedb.renderHtml();
 
-            Popup.create('Gene',content);
+            var popupid = Popup.create('Gene',content);
         }
 
 

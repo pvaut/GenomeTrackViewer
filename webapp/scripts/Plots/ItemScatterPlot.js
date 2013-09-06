@@ -30,13 +30,13 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             });
 
             that.eventids = [];
+
             var eventid = DQX.getNextUniqueID();that.eventids.push(eventid);
             Msg.listen(eventid,{ type: 'QueryChanged'}, function(scope,tableid) {
                 if (that.tableInfo.id==tableid)
                     that.reloadAll();
             } );
 
-            that.eventids = [];
             var eventid = DQX.getNextUniqueID();that.eventids.push(eventid);
             Msg.listen(eventid,{ type: 'SelectionUpdated'}, function(scope,tableid) {
                 if (that.tableInfo.id==tableid)
@@ -68,7 +68,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.panelButtons = Framework.Form(that.frameButtons).setPadding(5);
 
 
-                that.queryTypeControl = Controls.Combo(null, { label: 'Selection:', states:[{id:'all', name:'All'}, {id:'query', name:'Current query'}], value:'all'}).setOnChanged(function() {
+                that.queryTypeControl = Controls.Combo(null, { label: 'Selection:', states:[{id:'query', name:'Current query'}, {id:'all', name:'All'}], value:'query'}).setOnChanged(function() {
                     that.reloadAll();
                 });
 

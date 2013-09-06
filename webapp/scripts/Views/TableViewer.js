@@ -49,6 +49,25 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     }
                 } );
 
+                if (tableid == 'SNP') {
+                    Msg.listen('',{type: 'ShowSNPsInRange'}, function(scope, info) {
+                        that.activateState();
+                        var queryBuilder=that.panelTable.panelAdvancedQueryBuilder;
+                        var qry= SQL.WhereClause.AND([
+                            SQL.WhereClause.CompareFixed('chrom','=',info.chrom),
+                            SQL.WhereClause.CompareFixed('pos','>=',info.start),
+                            SQL.WhereClause.CompareFixed('pos','<=',info.stop)
+                            ]);
+                        queryBuilder.setQuery(qry);
+                        that.myTable.setQuery(qry);
+                        that.myTable.reLoadTable();
+                        var tableInfo = MetaData.mapTableCatalog[that.tableid];
+                        tableInfo.currentQuery = qry;
+                        Msg.broadcast({ type: 'QueryChanged'}, that.tableid );
+                    });
+
+                }
+
 
                 //This function is called during the initialisation. Create the frame structure of the view here
                 that.createFrames = function(rootFrame) {
