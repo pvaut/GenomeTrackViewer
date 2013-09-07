@@ -182,6 +182,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         'SNPCMB_'+MetaData.workspaceid
                     );
 
+                    //add snpid column to the datafetcher, not plotted but needed for the tooltip & click actions
+                    this.dataFetcherSNPProperties.addFetchColumnActive("snpid", "String");
+
+
                     if (that.filterByQuery)
                         this.dataFetcherSNPProperties.setUserQuery2(that.currentUserQuery);
 
@@ -215,6 +219,19 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                 if (propInfo.settings.channelName)
                                     theChannel.controls.setLegend(channelName).setAutoFillX(false);
                                 that.visibilityControlsGroup.addControl(theChannel.controls);
+
+                                theChannel.getToolTipContent = function(compID, pointIndex) {
+                                    var itemid = that.dataFetcherSNPProperties.getColumnPoint(pointIndex, 'snpid');
+                                    var pos = that.dataFetcherSNPProperties.getPosition(pointIndex);
+                                    var value = that.dataFetcherSNPProperties.getColumnPoint(pointIndex, compID);
+                                    return itemid+'<br/>Position= '+pos+'<br/>'+MetaData.findProperty(propInfo.tableid,compID).name+'= '+value.toFixed(4);
+                                };
+                                theChannel.handlePointClicked = function(compID, pointIndex) {
+                                    var itemid = that.dataFetcherSNPProperties.getColumnPoint(pointIndex, 'snpid');
+                                    Msg.send({ type: 'ItemPopup' }, { tableid:'SNP', itemid:itemid } );//Send a message that should trigger showing the snp popup
+                                };
+
+
                             }
 
                             var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, that.dataFetcherSNPProperties, propInfo.propid), true);//Create the component

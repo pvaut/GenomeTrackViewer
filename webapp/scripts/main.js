@@ -58,6 +58,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                         MetaData.tableCatalog = getter.getTableRecords('tablecatalog');
                         MetaData.mapTableCatalog = {};
                         $.each(MetaData.tableCatalog, function(idx, table) {
+                            table.hasGenomePositions = table.id=='SNP'; //todo: this should be made generic
                             table.currentQuery = null;
                             table.currentSelection = {};
                             table.isItemSelected = function(id) { return table.currentSelection[id]; }
