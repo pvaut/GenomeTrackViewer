@@ -143,6 +143,11 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 that.createPanelSimpleQuery = function () {
                     this.panelSimpleQuery = Framework.Form(this.frameQuerySimple);
                     this.panelSimpleQuery.setPadding(10);
+                    var queryButton = Controls.Button(null, { content: 'Define query...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
+                    queryButton .setOnChanged(function() {
+                        Msg.send({ type: 'EditQuery'}, that.tableid);
+                    })
+                    this.panelSimpleQuery.addControl(Controls.CompoundVert([queryButton]));
                 }
 
                 that.reLoad = function() {
@@ -188,6 +193,10 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                             if (propInfo.datatype=='Boolean') {
                                 col.setDataType_MultipleChoiceInt([{id:0, name:'No'}, {id:1, name:'Yes'}]);
+                            }
+
+                            if (propInfo.propid=='chrom') {
+                                col.setDataType_MultipleChoiceString(MetaData.chromosomes);
                             }
 
                             //col.setToolTip(pop.name); //Provide a tool tip for the column
