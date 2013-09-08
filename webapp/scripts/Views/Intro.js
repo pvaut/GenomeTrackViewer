@@ -122,10 +122,11 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     Application.getChannelInfo(function() {
                         $.each(MetaData.customProperties, function(idx, prop) {
-                            str = '<b>'+prop.name+'</b> ';
+                            str = '<b>'+prop.name+'</b><span style="color:rgb(150,150,150)"> ';
                             if (prop.name!=prop.propid)
-                                str +=prop.propid;
+                                str += prop.propid;
                             str += ' ('+prop.datatype+')';
+                            str += '</span>';
                             var openButton = Controls.LinkButton(null,{smartLink : true, opacity:(prop.isCustom?1:0.15) }).setOnChanged(function() {
                                 EditProperty.execute(prop.tableid, prop.propid);
                             });
@@ -151,8 +152,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     var data ={};
                     data.database = MetaData.database;
                     data.workspaceid = MetaData.workspaceid;
-                    data.tableid = that.propInfo.tableid;
-                    data.propid = that.propInfo.propid;
+                    data.tableid = tableid;
+                    data.propid = propid;
                     data.dir = dir;
                     DQX.customRequest(MetaData.serverUrl,'uploadtracks','property_move', data, function(resp) {
                         DQX.stopProcessing();
