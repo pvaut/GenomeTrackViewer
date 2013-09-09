@@ -2,12 +2,12 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
     function (DQX, Controls, Msg, Popup) {
         var MetaData = {};
 
-        MetaData.quickLoad = true;
+        MetaData.quickLoad = false;
 
 
-        //MetaData.serverUrl="http://localhost:8000/app01";
+        MetaData.serverUrl="http://localhost:8000/app01";
         //MetaData.serverUrl="http://localhost/DQXServer/app";
-        MetaData.serverUrl="http://panoptes.cggh.org/sandbox/dqx_server_GenomeTrackViewer/app";
+        //MetaData.serverUrl="http://panoptes.cggh.org/sandbox/dqx_server_GenomeTrackViewer/app";
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Data source tables

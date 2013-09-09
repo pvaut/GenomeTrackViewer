@@ -162,12 +162,6 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     that.myTable.createSelectionColumn(tableInfo.id, tableInfo.primkey, tableInfo);
 
-                    // Add a column for chromosome
-//                    var comp = that.myTable.createTableColumn(QueryTable.Column("Chrom.","chrom",0),"String",false);
-
-                    // Add a column for position
-//                    var comp = that.myTable.createTableColumn(QueryTable.Column("Position.","pos",0),"IntB64",false);
-//                    that.myTable.addSortOption("Position", SQL.TableSort(['chrom', 'pos'])); // Define a joint sort action on both columns chrom+pos
 
 
                     //Create a column for each population frequency
@@ -184,12 +178,16 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             }
                             if (propInfo.isPrimKey)
                                 tablePart = 0;
+                            var sortable = (!tableInfo.hasGenomePositions) || ( (propInfo.propid!='chrom') && (propInfo.propid!='pos') );
                             var col = that.myTable.createTableColumn(
                                 QueryTable.Column(
                                     propInfo.name,propInfo.propid,tablePart),
                                 encoding,
-                                true
+                                sortable
                             );
+                            if ( (tableInfo.hasGenomePositions) && (that.myTable.findColumn('chrom')) && (that.myTable.findColumn('pos')) ) {
+                                that.myTable.addSortOption("Position", SQL.TableSort(['chrom', 'pos']),true); // Define a joint sort action on both columns chrom+pos, and set it as default
+                            }
 
                             if (propInfo.datatype=='Boolean') {
                                 col.setDataType_MultipleChoiceInt([{id:0, name:'No'}, {id:1, name:'Yes'}]);
