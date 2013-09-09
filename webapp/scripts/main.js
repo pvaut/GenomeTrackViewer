@@ -52,15 +52,17 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
             function Start_Part2() {
 
                 var getter = DataFetchers.ServerDataGetter();
-                getter.addTable('tablecatalog',['id','name','primkey'],'id');
+                getter.addTable('tablecatalog',['id','name','primkey', 'IsPositionOnGenome'],'id');
                 getter.execute(MetaData.serverUrl,MetaData.database,
                     function() { // Upon completion of data fetching
                         MetaData.tableCatalog = getter.getTableRecords('tablecatalog');
                         MetaData.mapTableCatalog = {};
                         $.each(MetaData.tableCatalog, function(idx, table) {
-                            table.hasGenomePositions = table.id=='SNP'; //todo: this should be made generic
+                            table.hasGenomePositions = table.IsPositionOnGenome=='1';
                             table.currentQuery = null;
                             table.currentSelection = {};
+                            if (table.hasGenomePositions)
+                                table.genomeBrowserInfo = {};
                             table.isItemSelected = function(id) { return table.currentSelection[id]; }
                             table.selectItem = function(id, newState) {
                                 if (newState)

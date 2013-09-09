@@ -122,7 +122,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     Application.getChannelInfo(function() {
                         $.each(MetaData.customProperties, function(idx, prop) {
-                            str = '<b>'+prop.name+'</b><span style="color:rgb(150,150,150)"> ';
+                            str = '<b><span style="color:{col}">'.DQXformat({col:(prop.isCustom?'black':'rgb(128,0,0)')})+prop.name+'</span></b><span style="color:rgb(150,150,150)"> ';
                             if (prop.name!=prop.propid)
                                 str += prop.propid;
                             str += ' ('+prop.datatype+')';

@@ -46,6 +46,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             var that = PopupFrame.PopupFrame('propedit', {title:'Edit property', blocking:true, sizeX:550, sizeY:550 });
 
             that.propInfo = MetaData.findProperty(tableid, propid);
+            that.tableInfo = MetaData.mapTableCatalog[tableid];
 
             that.createFrames = function() {
                 that.frameRoot.makeGroupVert();
@@ -91,22 +92,23 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
 
                 // Genome browser settings
-                var grp_browser  = Controls.CompoundVert([]);
-                grp_browser.setLegend('Genome browser view').setAutoFillX(true).setMargin(10);
-                grouper.addControl(grp_browser);
+                if (that.tableInfo.hasGenomePositions) {
+                    var grp_browser  = Controls.CompoundVert([]);
+                    grp_browser.setLegend('Genome browser view').setAutoFillX(true).setMargin(10);
+                    grouper.addControl(grp_browser);
 
-                that.ctrl_showInBrowser = Controls.Check(null,{ label: 'Show in browser', value: that.propInfo.settings.showInBrowser });
-                grp_browser.addControl(that.ctrl_showInBrowser);
+                    that.ctrl_showInBrowser = Controls.Check(null,{ label: 'Show in browser', value: that.propInfo.settings.showInBrowser });
+                    grp_browser.addControl(that.ctrl_showInBrowser);
 
-                that.ctrl_channelName = Controls.Edit(null,{ size: 30, value: that.propInfo.settings.channelName });
-                grp_browser.addControl(Controls.CompoundHor([Controls.Static('Channel name:&nbsp;&nbsp;'), that.ctrl_channelName]));
+                    that.ctrl_channelName = Controls.Edit(null,{ size: 30, value: that.propInfo.settings.channelName });
+                    grp_browser.addControl(Controls.CompoundHor([Controls.Static('Channel name:&nbsp;&nbsp;'), that.ctrl_channelName]));
 
-                that.ctrl_channelColor = Controls.ColorPicker(null, {label: 'Color', value: DQX.parseColorString(that.propInfo.settings.channelColor) });
-                grp_browser.addControl(that.ctrl_channelColor);
+                    that.ctrl_channelColor = Controls.ColorPicker(null, {label: 'Color', value: DQX.parseColorString(that.propInfo.settings.channelColor) });
+                    grp_browser.addControl(that.ctrl_channelColor);
 
-                that.ctrl_connectLines = Controls.Check(null,{ label: 'Connect lines', value: that.propInfo.settings.connectLines });
-                grp_browser.addControl(that.ctrl_connectLines);
-
+                    that.ctrl_connectLines = Controls.Check(null,{ label: 'Connect lines', value: that.propInfo.settings.connectLines });
+                    grp_browser.addControl(that.ctrl_connectLines);
+                }
 
 
                 that.panelBody.addControl(grouper);
@@ -119,14 +121,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 var settings = {};
                 settings.showInTable = that.ctrl_showInTable.getValue();
-                settings.showInBrowser = that.ctrl_showInBrowser.getValue();
-                settings.channelName = that.ctrl_channelName.getValue();
-                settings.channelColor = that.ctrl_channelColor.getValue().toString();
-                if (that.propInfo.isFloat) {
-                    settings.decimDigits = parseInt(that.ctrl_decimdigits.getValue());
-                    settings.minval = parseFloat(that.ctrl_minval.getValue());
-                    settings.maxval = parseFloat(that.ctrl_maxval.getValue());
-                    settings.connectLines = that.ctrl_connectLines.getValue();
+                if (that.tableInfo.hasGenomePositions) {
+                    settings.showInBrowser = that.ctrl_showInBrowser.getValue();
+                    settings.channelName = that.ctrl_channelName.getValue();
+                    settings.channelColor = that.ctrl_channelColor.getValue().toString();
+                    if (that.propInfo.isFloat) {
+                        settings.decimDigits = parseInt(that.ctrl_decimdigits.getValue());
+                        settings.minval = parseFloat(that.ctrl_minval.getValue());
+                        settings.maxval = parseFloat(that.ctrl_maxval.getValue());
+                        settings.connectLines = that.ctrl_connectLines.getValue();
+                    }
                 }
 
                 DQX.setProcessing();

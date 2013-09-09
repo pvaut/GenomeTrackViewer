@@ -16,7 +16,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 //This function is called during the initialisation. Create the frame structure of the view here
                 that.createFrames = function(rootFrame) {
                     that.filterByQuery = false;
-                    that.currentUserQuery = null;
                     rootFrame.makeGroupHor();//Declare the root frame as a horizontally divided set of subframes
                     this.frameControls = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3));//Create frame that will contain the controls panel
                     this.frameBrowser = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.7));//Create frame that will contain the genome browser panel
@@ -25,11 +24,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     Msg.listen("", { type: 'JumpgenomePosition' }, that.onJumpGenomePosition);
 
                     Msg.listen("", {type: 'QueryChanged'}, function(scope, tableid) {
-                        if (tableid=='SNP') {
-                            that.currentUserQuery = MetaData.mapTableCatalog['SNP'].currentQuery;
-                            if (that.filterByQuery) {
-                                that.dataFetcherSNPProperties.setUserQuery2(that.currentUserQuery);
-                            }
+                        var tableInfo = MetaData.mapTableCatalog[tableid];
+                        if (tableInfo.hasGenomePositions) {
+                            if ( (tableInfo.genomeBrowserInfo.dataFetcher) && (tableInfo.genomeBrowserInfo.filterByQuery) )
+                                tableInfo.genomeBrowserInfo.dataFetcher.setUserQuery2(tableInfo.currentQuery);
                         }
                     });
 
@@ -70,24 +68,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     this.panelBrowser.getAnnotationFetcher().setFeatureType('gene', 'CDS');
 
-
                     //Define the action when a user clicks on a gene in the annotation channel
                     this.panelBrowser.getAnnotationChannel().handleFeatureClicked = function (geneID) {
                         Msg.send({type:'GenePopup'}, geneID);
                     }
 
-                    var ctrl_filtertype = Controls.RadioGroup('', { label:'Filter method', states:[{id:'all', name:'All SNPs'}, {id:'query', name:'Currently query'}], value:'all'}).setOnChanged(function() {
-                        that.filterByQuery = (ctrl_filtertype.getValue()=='query');
-                        if (that.filterByQuery)
-                            that.dataFetcherSNPProperties.setUserQuery2(that.currentUserQuery);
-                        else
-                            that.dataFetcherSNPProperties.setUserQuery2(null);
-                        that.panelBrowser.render();
-                    });
-                    this.panelControls.addControl(ctrl_filtertype);
-                    this.panelControls.addControl(Controls.VerticalSeparator(12));
                     that.visibilityControlsGroup = this.panelControls.addControl(Controls.CompoundVert([]));
-
 
 
                     that.createSnpPositionChannel();
@@ -168,85 +154,110 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         return;
                     that.uptodate = true;
 
-                    if (this.dataFetcherSNPProperties) {//Remove any existing channels
-                        $.each(that.currentCustomSnpProperties,function(idx,propid) {
-                            that.panelBrowser.delChannel(propid);
-                        });
-                        that.panelBrowser.delDataFetcher(this.dataFetcherSNPProperties);
-                    }
-
-                    //Initialise the data fetcher that will download the data for the table
-                    this.dataFetcherSNPProperties = new DataFetchers.Curve(
-                        MetaData.serverUrl,
-                        MetaData.database,
-                        'SNPCMB_'+MetaData.workspaceid
-                    );
-
-                    //add snpid column to the datafetcher, not plotted but needed for the tooltip & click actions
-                    this.dataFetcherSNPProperties.addFetchColumnActive("snpid", "String");
-
-
-                    if (that.filterByQuery)
-                        this.dataFetcherSNPProperties.setUserQuery2(that.currentUserQuery);
-
-                    //Create a column for each population frequency
-                    that.currentCustomSnpProperties = [];
                     that.visibilityControlsGroup.clear();
-                    var channelMap = {};
-                    $.each(MetaData.customProperties,function(idx,propInfo) {
-                        if ((propInfo.tableid=='SNP') && (propInfo.isFloat) && (propInfo.settings.showInBrowser)) {
-                            that.currentCustomSnpProperties.push(propInfo.propid);
-                            //Create the channel in the browser that will contain the frequency values
-                            var channelId = propInfo.settings.channelName;
-                            var channelName = propInfo.settings.channelName;
-                            if (!channelId) {
-                                channelId = propInfo.propid;
-                                channelName = propInfo.name;
-                            }
-                            var theChannel = channelMap[channelId];
-                            if (!theChannel) {
-                                theChannel = ChannelYVals.Channel(propInfo.propid,
-                                    { minVal: propInfo.settings.minval, maxVal: propInfo.settings.maxval } // range
-                                );
-                                theChannel
-                                    .setTitle(channelName)
-                                    .setHeight(150,true)
-                                    .setMaxViewportSizeX(5.0e5)
-                                    .setChangeYScale(true,true);
-                                that.panelBrowser.addChannel(theChannel, false);
-                                channelMap[channelId] = theChannel;
-                                theChannel.controls = Controls.CompoundVert([]);
-                                if (propInfo.settings.channelName)
-                                    theChannel.controls.setLegend(channelName).setAutoFillX(false);
-                                that.visibilityControlsGroup.addControl(theChannel.controls);
 
-                                theChannel.getToolTipContent = function(compID, pointIndex) {
-                                    var itemid = that.dataFetcherSNPProperties.getColumnPoint(pointIndex, 'snpid');
-                                    var pos = that.dataFetcherSNPProperties.getPosition(pointIndex);
-                                    var value = that.dataFetcherSNPProperties.getColumnPoint(pointIndex, compID);
-                                    return itemid+'<br/>Position= '+pos+'<br/>'+MetaData.findProperty(propInfo.tableid,compID).name+'= '+value.toFixed(4);
-                                };
-                                theChannel.handlePointClicked = function(compID, pointIndex) {
-                                    var itemid = that.dataFetcherSNPProperties.getColumnPoint(pointIndex, 'snpid');
-                                    Msg.send({ type: 'ItemPopup' }, { tableid:'SNP', itemid:itemid } );//Send a message that should trigger showing the snp popup
-                                };
-
-
+                    $.each(MetaData.mapTableCatalog,function(tableid,tableInfo) {
+                        if (tableInfo.hasGenomePositions) {
+                            if (tableInfo.genomeBrowserInfo.dataFetcher) {//Remove any existing channels
+                                $.each(tableInfo.genomeBrowserInfo.currentCustomProperties,function(idx,propid) {
+                                    that.panelBrowser.delChannel(propid);
+                                });
+                                that.panelBrowser.delDataFetcher(tableInfo.genomeBrowserInfo.dataFetcher);
                             }
 
-                            var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, that.dataFetcherSNPProperties, propInfo.propid), true);//Create the component
-                            plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
-                            plotcomp.myPlotHints.color = DQX.parseColorString(propInfo.settings.channelColor);
-                            if (propInfo.settings.connectLines)
-                                plotcomp.myPlotHints.makeDrawLines(1.0e99);
-                            var label = propInfo.name;
-                            if (!plotcomp.myPlotHints.color.isBlack())
-                                label = '&nbsp;<span style="background-color:{cl}">&nbsp;&nbsp;</span>&nbsp;'.DQXformat({cl:plotcomp.myPlotHints.color.toString()}) + label;
-                            var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, label, false);
-                            theChannel.controls.addControl(ctrl_onoff);
+                            var controlsGroup = Controls.CompoundVert([]).setLegend('<h3>'+tableInfo.name+'</h3>');
+                            that.visibilityControlsGroup.addControl(controlsGroup);
 
+
+                            var ctrl_filtertype = Controls.Combo('', { label:'Filter method: ', states:[{id:'all', name:'All'}, {id:'query', name:'Currently query'}], value:'all'}).setOnChanged(function() {
+                                tableInfo.genomeBrowserInfo.filterByQuery = (ctrl_filtertype.getValue()=='query');
+                                if (tableInfo.genomeBrowserInfo.filterByQuery)
+                                    tableInfo.genomeBrowserInfo.dataFetcher.setUserQuery2(tableInfo.currentQuery);
+                                else
+                                    tableInfo.genomeBrowserInfo.dataFetcher.setUserQuery2(null);
+                                that.panelBrowser.render();
+                            });
+                            controlsGroup.addControl(ctrl_filtertype);
+                            controlsGroup.addControl(Controls.VerticalSeparator(12));
+
+
+                            //Initialise the data fetcher that will download the data for the table
+                            var dataFetcher = new DataFetchers.Curve(
+                                MetaData.serverUrl,
+                                MetaData.database,
+                                tableInfo.id + 'CMB_' + MetaData.workspaceid
+                            );
+                            tableInfo.genomeBrowserInfo.dataFetcher = dataFetcher;
+
+                            //add id column to the datafetcher, not plotted but needed for the tooltip & click actions
+                            dataFetcher.addFetchColumnActive(tableInfo.primkey, "String");
+
+                            if (tableInfo.genomeBrowserInfo.filterByQuery)
+                                dataFetcher.setUserQuery2(tableInfo.currentQuery);
+
+                            //Create a column for each population frequency
+                            tableInfo.genomeBrowserInfo.currentCustomProperties = [];
+                            var channelMap = {};
+                            $.each(MetaData.customProperties,function(idx,propInfo) {
+                                if ((propInfo.tableid==tableInfo.id) && (propInfo.isFloat) && (propInfo.settings.showInBrowser)) {
+                                    var trackid =tableInfo.id+'_'+propInfo.propid;
+                                    tableInfo.genomeBrowserInfo.currentCustomProperties.push(trackid);
+                                    //Create the channel in the browser that will contain the frequency values
+                                    var channelId = propInfo.settings.channelName;
+                                    var channelName = propInfo.settings.channelName;
+                                    if (!channelId) {
+                                        channelId = trackid;
+                                        channelName = propInfo.name;
+                                    }
+                                    var theChannel = channelMap[channelId];
+                                    if (!theChannel) {
+                                        theChannel = ChannelYVals.Channel(trackid,
+                                            { minVal: propInfo.settings.minval, maxVal: propInfo.settings.maxval } // range
+                                        );
+                                        theChannel
+                                            .setTitle(channelName)
+                                            .setHeight(150,true)
+                                            .setMaxViewportSizeX(5.0e5)
+                                            .setChangeYScale(true,true);
+                                        that.panelBrowser.addChannel(theChannel, false);
+                                        channelMap[channelId] = theChannel;
+                                        theChannel.controls = Controls.CompoundVert([]);
+                                        if (propInfo.settings.channelName)
+                                            theChannel.controls.setLegend(channelName).setAutoFillX(false);
+                                        controlsGroup.addControl(theChannel.controls);
+
+                                        theChannel.getToolTipContent = function(compID, pointIndex) {
+                                            var itemid = dataFetcher.getColumnPoint(pointIndex, tableInfo.primkey);
+                                            var pos = dataFetcher.getPosition(pointIndex);
+                                            var value = dataFetcher.getColumnPoint(pointIndex, compID);
+                                            return itemid+'<br/>Position= '+pos+'<br/>'+MetaData.findProperty(propInfo.tableid,compID).name+'= '+value.toFixed(4);
+                                        };
+                                        theChannel.handlePointClicked = function(compID, pointIndex) {
+                                            var itemid = dataFetcher.getColumnPoint(pointIndex, tableInfo.primkey);
+                                            Msg.send({ type: 'ItemPopup' }, { tableid:tableInfo.id, itemid:itemid } );//Send a message that should trigger showing the item popup
+                                        };
+
+                                    }
+
+                                    var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, dataFetcher, propInfo.propid), true);//Create the component
+                                    plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
+                                    plotcomp.myPlotHints.color = DQX.parseColorString(propInfo.settings.channelColor);
+                                    if (propInfo.settings.connectLines)
+                                        plotcomp.myPlotHints.makeDrawLines(1.0e99);
+                                    var label = propInfo.name;
+                                    if (!plotcomp.myPlotHints.color.isBlack())
+                                        label = '&nbsp;<span style="background-color:{cl}">&nbsp;&nbsp;</span>&nbsp;'.DQXformat({cl:plotcomp.myPlotHints.color.toString()}) + label;
+                                    var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, label, false);
+                                    theChannel.controls.addControl(ctrl_onoff);
+
+                                }
+                            });
                         }
+
                     });
+
+
+
 
                     this.panelControls.render();
 
@@ -256,230 +267,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 }
 
 
-//                that.addTrack = function() {
-//                    var wiz=Wizard.Create('AddTrack', {title:'Add new track', sizeX:400, sizeY: 300});
-//
-//                    var ctrl_trackFile = Controls.FileUpload(null, { serverUrl: MetaData.serverUrl }).setOnChanged(function() {
-//                        if (!ctrl_trackName.getValue())
-//                            ctrl_trackName.modifyValue(ctrl_trackFile.getFileName());
-//                    });
-//                    var ctrl_trackName = Controls.Edit(null, { size: 30 });
-//
-//                    var controls = Controls.CompoundVert([
-//                        ctrl_trackFile,
-//                        Controls.CompoundHor([Controls.Static('Track name:'),ctrl_trackName])
-//                    ]);
-//
-//                    wiz.addPage({
-//                        id: 'page1',
-//                        form: controls,
-//                        reportValidationError: function() {
-//                            if (!ctrl_trackFile.getValue())
-//                                return 'No file uploaded';
-//                            if (!ctrl_trackName.getValue())
-//                                return 'No track name provided';
-//                        }
-//                    });
-//
-//                    wiz.run(function() {
-//                        var data={};
-//                        data.fileid = wiz.getResultValue(ctrl_trackFile.getID());
-//                        data.name = wiz.getResultValue(ctrl_trackName.getID());
-//                        data.database = MetaData.database;
-//                        data.workspaceid = MetaData.workspaceid;
-//                        DQX.setProcessing();
-//                        DQX.customRequest(MetaData.serverUrl,'uploadtracks','addtrack',data,function(resp) {
-//                            DQX.stopProcessing();
-//                            if ('Error' in resp) {
-//                                alert(resp.Error);
-//                                return;
-//                            }
-//                            that.loadStatus(function() {
-//                                that.editTrack(resp.trackid);
-//                            });
-//                        });
-//                    });
-//                }
-//
-//
-//                that.loadStatus = function(proceedFunction) {
-//                    var getter = DataFetchers.ServerDataGetter();//Instantiate the fetcher object
-//                    // Declare a first table for fetching
-//                    getter.addTable('customtracks', ['id','name', 'properties'], 'name',SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid));
-//
-//                    // Execute the fetching
-//                    getter.execute(MetaData.serverUrl,MetaData.database,
-//                        function() {
-//                            MetaData.tracks = getter.getTableRecords('customtracks');
-//                            that.loadStatus_sub1(proceedFunction);
-//                        }
-//                    );
-//
-//                }
-//
-//                that.loadStatus_sub1 = function(proceedFunction) {
-//
-//                    that.channelControls=[];//this will accumulate the check boxes that control the visibility of channels
-//                    that.ctrl_trackAdd = Controls.Button(null, { content: 'Add track...' }).setOnChanged(that.addTrack);
-//                    that.channelControls.push(that.ctrl_trackAdd);
-//
-//                    //Remove any existing channels
-//                    $.each(that.fetchers,function(id,fetcher) {
-//                        that.panelBrowser.delChannel(id);
-//                        that.panelBrowser.delDataFetcher(fetcher);
-//                    });
-//
-//                    that.fetchers={};
-//                    $.each(MetaData.tracks,function(idx,trackInfo) {
-//                        trackInfo.propertyDict={ minval:0, maxval:1, connect:false, ylines:'' };
-//                        if (trackInfo.properties) {
-//                            var st = base64.decode(trackInfo.properties);
-//                            trackInfo.propertyDict = JSON.parse(st);
-//                        }
-//                        var dataFetcherSNPs = new DataFetchers.Curve(
-//                            MetaData.serverUrl,
-//                            MetaData.database,
-//                            trackInfo.id
-//                        );
-//
-//                        //Create the channel in the browser that will contain the frequency values
-//                        var theChannel = ChannelYVals.Channel(trackInfo.id,
-//                            { minVal: trackInfo.propertyDict.minval, maxVal: trackInfo.propertyDict.maxval } // range
-//                        );
-//                        theChannel
-//                            .setTitle(trackInfo.name)
-//                            .setHeight(200,true)
-//                            .setMaxViewportSizeX(50.0e5)
-//                            .setChangeYScale(true,true);
-//                        that.panelBrowser.addChannel(theChannel, false);
-//
-//                        if (trackInfo.propertyDict.ylines) {
-//                            $.each(trackInfo.propertyDict.ylines.split(','),function(idx,token) {
-//                                theChannel.addComponent(ChannelYVals.YColorZone(null,parseFloat(token),parseFloat(token),DQX.Color(1,0,0)));
-//                            });
-//                        }
-//
-//                        var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, dataFetcherSNPs, trackInfo.id), true);//Create the component
-//                        plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
-//                        if (trackInfo.propertyDict.connect)
-//                            plotcomp.myPlotHints.makeDrawLines(1.0e99);
-//                        that.fetchers[trackInfo.id]=dataFetcherSNPs;
-//
-//
-//
-//                        //Define the tooltip shown when a user hovers the mouse over a point in the channel
-//                        theChannel.getToolTipContent = function(compID, pointIndex) {
-//                            var pos = that.fetchers[compID].getPosition(pointIndex);
-//                            var value = that.fetchers[compID].getColumnPoint(pointIndex, compID);
-//                            return 'Position= '+pos+'<br/>Value= '+value.toFixed(4);
-//                        };
-//
-//                        //Define the action when a user clicks on a point in the channel
-//                        theChannel.handlePointClicked = function(compID, pointIndex) {
-//                            var snpid = that.panelBrowser.getCurrentChromoID()+':'+that.fetchers[compID].getPosition(pointIndex);
-//                            Msg.send({ type: 'SnpPopup' }, snpid);
-//                        };
-//
-//
-//
-//                        var ctrl_onoff = theChannel.createComponentVisibilityControl(trackInfo.id, 'Display', false);
-//                        var ctrl_del = Controls.Button(null, { content: 'Delete...' }).setOnChanged(function() { that.delTrack(trackInfo.id) });
-//                        var ctrl_edit = Controls.Button(null, { content: 'Edit...' }).setOnChanged(function() { that.editTrack(trackInfo.id) });
-//
-//                        var controlGroup = Controls.CompoundHor([ctrl_onoff, Controls.HorizontalSeparator(30), ctrl_del, Controls.HorizontalSeparator(30), ctrl_edit]);
-//                        controlGroup.setLegend('<h3>'+trackInfo.name+'</h3>');
-//
-//                        that.channelControls.push(controlGroup);
-//
-//                    })
-//
-//                    that.panelBrowser.handleResize();
-//                    that.panelBrowser.setChromosome(MetaData.chromosomes[0].id,true,true);
-//
-//                    that.panelControls.clear();
-//                    that.panelControls.addControl(Controls.CompoundVert(that.channelControls));
-//                    that.panelControls.render();
-//                    if (proceedFunction) proceedFunction();
-//                }
-//
-//
-//                that.delTrack = function(trackid) {
-//                    var trackInfo=null;
-//                    $.each(MetaData.tracks,function(idx,trackinf) {
-//                        if (trackinf.id==trackid)
-//                            trackInfo = trackinf;
-//                    });
-//
-//                    if (confirm('Are you sure you want to permanently delete track "{name}"'.DQXformat({name:trackInfo.name}))) {
-//                        var data = {database:MetaData.database, workspaceid: MetaData.workspaceid, trackid:trackid };
-//                        DQX.customRequest(MetaData.serverUrl,'uploadtracks','deltrack',data,function() {
-//                            that.loadStatus();
-//                        })
-//                    }
-//                }
-//
-//                that.editTrack = function(trackid) {
-//                    var trackInfo=null;
-//                    $.each(MetaData.tracks,function(idx,trackinf) {
-//                        if (trackinf.id==trackid)
-//                            trackInfo = trackinf;
-//                    });
-//
-//                    var wiz=Wizard.Create('EditTrack', {title:'Edit track', sizeX:400, sizeY: 400});
-//
-//                    var ctrl_trackName = Controls.Edit(null, { size: 30 });
-//                    ctrl_trackName.modifyValue(trackInfo.name);
-//
-//                    var ctrl_minval = Controls.Edit(null, { size: 10, value:trackInfo.propertyDict.minval });
-//                    var ctrl_maxval = Controls.Edit(null, { size: 10, value:trackInfo.propertyDict.maxval });
-//
-//                    var ctrl_ylines = Controls.Edit(null, { size: 30, value:trackInfo.propertyDict.ylines });
-//
-//                    var ctrl_connect = Controls.Check(null, { label:'Connect points', value:trackInfo.propertyDict.connect });
-//
-//                    var controls = Controls.CompoundVert([
-//                        Controls.CompoundHor([Controls.Static('Track name:'),ctrl_trackName]),
-//                        Controls.VerticalSeparator(15),
-//                        Controls.CompoundHor([Controls.Static('Min value:'),ctrl_minval]),
-//                        Controls.VerticalSeparator(15),
-//                        Controls.CompoundHor([Controls.Static('Max value:'),ctrl_maxval]),
-//                        Controls.VerticalSeparator(15),
-//                        Controls.CompoundHor([Controls.Static('Y value lines (comma separated) :'),ctrl_ylines]),
-//                        Controls.VerticalSeparator(15),
-//                        ctrl_connect
-//                    ]);
-//
-//                    wiz.addPage({
-//                        id: 'page1',
-//                        form: controls,
-//                        reportValidationError: function() {
-//                        }
-//                    });
-//
-//                    wiz.run(function() {
-//
-//                        var props={
-//                            minval:wiz.getResultValue(ctrl_minval.getID()),
-//                            maxval:wiz.getResultValue(ctrl_maxval.getID()),
-//                            connect:wiz.getResultValue(ctrl_connect.getID()),
-//                            ylines:wiz.getResultValue(ctrl_ylines.getID())
-//                        };
-//
-//                        var data={};
-//                        data.workspaceid = MetaData.workspaceid;
-//                        data.trackid = trackInfo.id;
-//                        data.name = wiz.getResultValue(ctrl_trackName.getID());
-//                        data.database = MetaData.database;
-//                        data.properties = base64.encode(JSON.stringify(props));
-//                        DQX.setProcessing();
-//                        DQX.customRequest(MetaData.serverUrl,'uploadtracks','modifytrack',data,function(resp) {
-//                            DQX.stopProcessing();
-//                            that.loadStatus();
-//                        });
-//                    });
-//
-//
-//                }
 
 
                 return that;
