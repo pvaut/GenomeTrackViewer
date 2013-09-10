@@ -30,6 +30,9 @@ def ResponseExecute(data, calculationObject):
         workspaceid = DQXDbTools.ToSafeIdentifier(data['workspaceid'])
         tableid = DQXDbTools.ToSafeIdentifier(data['tableid'])
 
+        #raise Exception('A random error!')
+
+
         db = DQXDbTools.OpenDatabase(databaseName)
         primkey = Utils.GetTablePrimKey(tableid, db.cursor())
         db.close()
@@ -158,5 +161,5 @@ def ResponseExecute(data, calculationObject):
 
 
 def response(returndata):
-    return asyncresponder.RespondAsync(ResponseExecute, returndata)
+    return asyncresponder.RespondAsync(ResponseExecute, returndata, "Add custom property")
 

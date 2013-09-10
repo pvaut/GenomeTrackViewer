@@ -5,7 +5,7 @@ def response(returndata):
     if info is None:
         returndata['completed'] = True
     else:
-        returndata['completed'] = False
+        returndata['completed'] = info['completed']
         returndata['status'] = info['status']
         returndata['progress'] = info['progress']
         returndata['failed'] = info['failed']

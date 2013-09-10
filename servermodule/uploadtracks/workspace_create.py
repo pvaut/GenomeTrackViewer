@@ -38,5 +38,5 @@ def ResponseExecute(data, calculationObject):
 
 def response(returndata):
     returndata['id']='WS'+str(uuid.uuid1()).replace('-', '_')
-    return asyncresponder.RespondAsync(ResponseExecute, returndata)
+    return asyncresponder.RespondAsync(ResponseExecute, returndata, "Create new workspace")
 

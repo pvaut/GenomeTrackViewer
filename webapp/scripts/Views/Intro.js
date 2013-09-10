@@ -1,5 +1,5 @@
-define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadProperties", "Wizards/EditProperty", "Plots/ItemScatterPlot"],
-    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, DataFetchers, SQL, MetaData, UploadProperties, EditProperty, ItemScatterPlot) {
+define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/FrameList", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadProperties", "Wizards/EditProperty", "Plots/ItemScatterPlot"],
+    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, FrameList, DataFetchers, SQL, MetaData, UploadProperties, EditProperty, ItemScatterPlot) {
 
         ////////////// Utilities for async server communication in case of lengthy operations
 
@@ -51,8 +51,9 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 that.createFrames = function(rootFrame) {
                     rootFrame.makeGroupHor();
 
-                    this.frameButtons = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3)).setFixedSize(Framework.dimX, 400);
+                    this.frameButtons = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.3)).setFixedSize(Framework.dimX, 300);
                     this.frameChannels = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.7)).setDisplayTitle("Workspace overview");
+                    this.frameCalculations = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.5)).setDisplayTitle("Server calculations");
                 }
 
                 // This function is called during the initialisation. Create the panels that will populate the frames here
@@ -102,6 +103,12 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         Controls.CompoundVert([browserButton, bt_addprops, bt_refresh]).setTreatAsBlock(),
                         //Controls.ColorPicker(null, {label: 'Color', value: DQX.Color(1,1,0)})
                     ]));
+
+
+
+                    this.panelCalculations = FrameList(this.frameCalculations);
+
+                    that.updateCalculationInfo();
 
                 }
 
@@ -160,6 +167,32 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         Msg.send({ type: 'ReloadChannelInfo' });
                     });
                 }
+
+
+                that.updateCalculationInfo = function() {
+                    var fetcher = DataFetchers.RecordsetFetcher(MetaData.serverUrl, 'datasetindex', 'calculations');
+                    fetcher.addColumn('id', 'GN');
+                    fetcher.addColumn('user', 'GN');
+                    fetcher.addColumn('timestamp', 'GN');
+                    fetcher.addColumn('name', 'GN');
+                    fetcher.addColumn('status', 'GN');
+                    fetcher.addColumn('progress', 'IN');
+                    fetcher.addColumn('completed', 'IN');
+                    fetcher.addColumn('failed', 'IN');
+                    fetcher._maxResultCount = 20;
+                    fetcher.getData(SQL.WhereClause.Trivial(), 'timestamp', function (data) {
+                            tableInfo.data = data;
+                            var calcs = [{id:'001', content:'Calculation 1'}, {id:'002', content:'Calculation 2'}];
+                            that.panelCalculations.setItems(calcs);
+                            that.panelCalculations.render();
+                            setTimeout(that.updateCalculationInfo,500);
+                        },
+                        function() {
+                            setTimeout(that.updateCalculationInfo,5000);
+                        }
+                    );
+                }
+
 
 
                 Msg.listen('', { type: 'ReloadChannelInfo' }, function () {
