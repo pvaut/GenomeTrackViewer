@@ -170,6 +170,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
 
                 that.updateCalculationInfo = function() {
+                    //return;
                     var fetcher = DataFetchers.RecordsetFetcher(MetaData.serverUrl, 'datasetindex', 'calculations');
                     fetcher.addColumn('id', 'GN');
                     fetcher.addColumn('user', 'GN');
@@ -180,12 +181,47 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     fetcher.addColumn('completed', 'IN');
                     fetcher.addColumn('failed', 'IN');
                     fetcher._maxResultCount = 20;
-                    fetcher.getData(SQL.WhereClause.Trivial(), 'timestamp', function (data) {
-                            tableInfo.data = data;
-                            var calcs = [{id:'001', content:'Calculation 1'}, {id:'002', content:'Calculation 2'}];
-                            that.panelCalculations.setItems(calcs);
+                    fetcher._sortReverse = true;
+                    var whc = SQL.WhereClause.OR([
+                        SQL.WhereClause.CompareFixed('scope','=',''),
+                        SQL.WhereClause.CompareFixed('scope','=',MetaData.database),
+                        SQL.WhereClause.CompareFixed('scope','=',MetaData.database+'_'+MetaData.workspaceid)
+                    ]);
+                    fetcher.getData(whc, 'timestamp', function (data) {
+                            var calcs = [];
+                            for (var i=0; i<data.id.length; i++) {
+                                var color = DQX.Color(0,0,0);
+                                if (data.completed[i]&&(!data.failed[i]))
+                                    color = DQX.Color(0.6,0.6,0.6);
+                                var str = '<span style="color:{cl}">'.DQXformat({cl: color.toString()});
+                                str += '<span style="font-size:70%">{usr}, {tme}</span><br>{name}<br>'.DQXformat({
+                                    usr: data.user[i],
+                                    tme: data.timestamp[i],
+                                    name: data.name[i]
+                                });
+                                if (data.failed[i])
+                                    str += '<span style="font-weight:bold;color:red">FAILED: </span><span style="font-weight:bold">{status}</span>'.DQXformat({
+                                        status: data.status[i]
+                                    });
+                                else {
+                                    if (data.completed[i])
+                                        str +='<span style="color:rgb(0,128,0)">Completed</span>';
+                                    else {
+                                        progressstr = '';
+                                        if (data.progress[i]>0)
+                                            progressstr = str(data.progress[i])+' %';
+                                        str += '<span style="font-weight:bold;color:blue">{status} {progress}</span>'.DQXformat({
+                                            status: data.status[i],
+                                            progress: progressstr
+                                        });
+                                    }
+                                }
+                                str += '</span>';
+                                calcs.push({id: data.id[i], content: str});
+                            }
+                            that.panelCalculations.setItems(calcs,'');
                             that.panelCalculations.render();
-                            setTimeout(that.updateCalculationInfo,500);
+                            setTimeout(that.updateCalculationInfo,2000);
                         },
                         function() {
                             setTimeout(that.updateCalculationInfo,5000);

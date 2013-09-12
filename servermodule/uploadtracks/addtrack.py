@@ -65,7 +65,7 @@ def response(returndata):
     db.commit()
     db.close()
 
-    cmd = "mysql -u {0} -p{1} {2} < {3}".format(config.DBUSER, config.DBPASS, databaseName, sqlfile)
+    cmd = config.mysqlcommand + " -u {0} -p{1} {2} < {3}".format(config.DBUSER, config.DBPASS, databaseName, sqlfile)
     print(cmd)
     os.system(cmd)
 

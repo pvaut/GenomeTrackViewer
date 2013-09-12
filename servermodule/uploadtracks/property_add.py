@@ -30,6 +30,8 @@ def ResponseExecute(data, calculationObject):
         workspaceid = DQXDbTools.ToSafeIdentifier(data['workspaceid'])
         tableid = DQXDbTools.ToSafeIdentifier(data['tableid'])
 
+        calculationObject.SetScope(databaseName+'_'+workspaceid)
+
         #raise Exception('A random error!')
 
 
@@ -48,6 +50,8 @@ def ResponseExecute(data, calculationObject):
         print('======================================')
         print(str(properties))
         print(str(propertyTypes))
+
+        calculationObject.SetName('Upload custom properties to {0}: {1}'.format(tableid, ', '.join(properties)))
 
         # Load the file
         filename = os.path.join(config.BASEDIR, 'Uploads', DQXDbTools.ToSafeIdentifier(data['fileid']))
@@ -82,9 +86,9 @@ def ResponseExecute(data, calculationObject):
         tb.SaveSQLCreation(tmpfile_create, tmptable)
         tb.SaveSQLDump(tmpfile_dump, tmptable)
         calculationObject.SetInfo('Importing into database')
-        cmd = "mysql -u {0} -p{1} {2} < {3}".format(config.DBUSER, config.DBPASS, databaseName, tmpfile_create)
+        cmd = config.mysqlcommand + " -u {0} -p{1} {2} < {3}".format(config.DBUSER, config.DBPASS, databaseName, tmpfile_create)
         os.system(cmd)
-        cmd = "mysql -u {0} -p{1} {2} < {3}".format(config.DBUSER, config.DBPASS, databaseName, tmpfile_dump)
+        cmd = config.mysqlcommand + " -u {0} -p{1} {2} < {3}".format(config.DBUSER, config.DBPASS, databaseName, tmpfile_dump)
         os.system(cmd)
         os.remove(tmpfile_create)
         os.remove(tmpfile_dump)
