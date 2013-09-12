@@ -18,9 +18,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 { id: 'id', name: 'ID', datatype: 'Text', propid: that.tableInfo.primkey, data: null, visible:false, required:true },
                 { id: 'xaxis', name: 'X axis', datatype: 'Value', propid: null, data: null, visible:true, required:true },
                 { id: 'yaxis', name: 'Y axis', datatype: 'Value', propid: null, data: null, visible:true, required:true },
-                { id: 'color', name: 'Point color', datatype: 'Text', propid: null, visible:true, data: null },
+                { id: 'color', name: 'Point color', datatype: 'Category', propid: null, visible:true, data: null },
                 { id: 'size', name: 'Point size', datatype: 'Value', propid: null, visible:true, data: null },
-                { id: 'style', name: 'Point style', datatype: 'Text', propid: null, visible:true, data: null },
+                { id: 'style', name: 'Point style', datatype: 'Category', propid: null, visible:true, data: null },
                 { id: 'label', name: 'Hover label', datatype: '', propid: null, visible:true, data: null },
             ];
 
@@ -77,7 +77,14 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     if (plotAspect.visible) {
                         var propList = [ {id:'', name:'-- None --'}];
                         $.each(MetaData.customProperties, function(idx, prop) {
-                            if ( ((prop.datatype==plotAspect.datatype)||(!plotAspect.datatype)) && (prop.tableid==that.tableInfo.id) )
+                            var included = false;
+                            if (prop.tableid==that.tableInfo.id) {
+                                if ( (prop.datatype==plotAspect.datatype) || (!plotAspect.datatype) )
+                                    included = true;
+                                if ((plotAspect.datatype=='Category') && ( (prop.datatype=='Text') || (prop.datatype=='Boolean') ) )
+                                    included = true;
+                            }
+                            if (included)
                                 propList.push({ id:prop.propid, name:prop.name });
                         });
                         plotAspect.picker = Controls.Combo(null,{ label:'', states: propList }).setOnChanged( function() { that.fetchData(plotAspect.id)} );
@@ -119,6 +126,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 if (aspectInfo.visible)
                     aspectInfo.propid = aspectInfo.picker.getValue();
                 if (aspectInfo.propid) {
+                    var propInfo = MetaData.findProperty(that.tableInfo.id,aspectInfo.propid);
                     if (that.propDataMap[aspectInfo.propid]) {
                         aspectInfo.data = that.propDataMap[aspectInfo.propid];
                         that.processAspectData(plotAspectID);
@@ -128,8 +136,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         var fetcher = DataFetchers.RecordsetFetcher(MetaData.serverUrl, MetaData.database, that.tableInfo.id + 'CMB_' + MetaData.workspaceid);
                         fetcher.setMaxResultCount(999999);
                         var encoding='ST';
-                        if (aspectInfo.datatype=='Value')
+                        if (propInfo.datatype=='Value')
                             encoding = 'F3';
+                        if (propInfo.datatype=='Boolean')
+                            encoding = 'GN';
                         fetcher.addColumn(aspectInfo.propid, encoding);
                         that.fetchCount += 1;
                         that.panelPlot.render();
@@ -158,6 +168,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
             that.processAspectData = function(plotAspectID) {
                 var aspectInfo = that.mapPlotAspects[plotAspectID];
+                var propInfo = MetaData.findProperty(that.tableInfo.id,aspectInfo.propid);
                 var values = aspectInfo.data;
                 if ((aspectInfo.datatype == 'Value')&&(values)) {
                     var minval=1.0e99;
@@ -173,6 +184,11 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     var range = aspectInfo.maxval-aspectInfo.minval;
                     aspectInfo.maxval += range/20;
                     aspectInfo.minval -= range/20;
+                }
+
+                if ( (aspectInfo.datatype == 'Category') && (values) ) {
+                    for (var i=0; i<values.length; i++)
+                        values[i] = propInfo.toDisplayString(values[i]);
                 }
 
                 if (plotAspectID=='id') {
