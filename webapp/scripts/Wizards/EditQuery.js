@@ -3,16 +3,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
         var EditQuery = {};
 
-        EditQuery.init = function() {
-            Msg.listen('',{type:'EditQuery'}, function(scope, tableid) {
-                var frame = EditQuery.CreateDialogBox(tableid);
-                frame.create();
-            });
-
-        }
-
-
-
 
         EditQuery.CreateDialogBox = function(tableid) {
             var that = PopupFrame.PopupFrame('editquery', {title:'Edit query', blocking:true, sizeX:700, sizeY:600 });
@@ -38,6 +28,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.close();
 
             }
+
+            that.create();
 
             return that;
         }

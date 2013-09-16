@@ -116,7 +116,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             }
 
             that.reDraw = function() {
-                that.panelPlot.render();
+                that.panelPlot.invalidate();
             }
 
 
@@ -130,7 +130,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     if (that.propDataMap[aspectInfo.propid]) {
                         aspectInfo.data = that.propDataMap[aspectInfo.propid];
                         that.processAspectData(plotAspectID);
-                        that.panelPlot.render();
+                        that.panelPlot.invalidate();
                     }
                     else {
                         var fetcher = DataFetchers.RecordsetFetcher(MetaData.serverUrl, MetaData.database, that.tableInfo.id + 'CMB_' + MetaData.workspaceid);
@@ -142,7 +142,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             encoding = 'GN';
                         fetcher.addColumn(aspectInfo.propid, encoding);
                         that.fetchCount += 1;
-                        that.panelPlot.render();
+                        that.panelPlot.invalidate();
                         var query = SQL.WhereClause.Trivial();
                         if ((that.queryTypeControl.getValue()=='query') && (that.tableInfo.currentQuery) )
                             query = that.tableInfo.currentQuery;
@@ -156,13 +156,13 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             aspectInfo.data = data[aspectInfo.propid];
                             that.propDataMap[aspectInfo.propid] = aspectInfo.data;
                             that.processAspectData(plotAspectID);
-                            that.panelPlot.render();
+                            that.panelPlot.invalidate();
                         });
                     }
                 }
                 else {
                     that.processAspectData(plotAspectID);
-                    that.panelPlot.render();
+                    that.panelPlot.invalidate();
                 }
             };
 
@@ -506,7 +506,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     }
                 }
                 Msg.broadcast({type:'SelectionUpdated'}, that.tableInfo.id);
-                //that.panelPlot.render();
             }
 
 

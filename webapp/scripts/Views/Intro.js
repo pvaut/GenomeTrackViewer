@@ -1,5 +1,5 @@
-define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/FrameList", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadProperties", "Wizards/EditProperty", "Plots/ItemScatterPlot"],
-    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, FrameList, DataFetchers, SQL, MetaData, UploadProperties, EditProperty, ItemScatterPlot) {
+define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/Popup", "DQX/DocEl", "DQX/Utils", "DQX/FrameTree", "DQX/FrameList", "DQX/DataFetcher/DataFetchers", "DQX/SQL", "MetaData", "Wizards/UploadProperties", "Wizards/EditProperty"],
+    function (require, Application, Framework, Controls, Msg, Popup, DocEl, DQX, FrameTree, FrameList, DataFetchers, SQL, MetaData, UploadProperties, EditProperty) {
 
         ////////////// Utilities for async server communication in case of lengthy operations
 
@@ -87,19 +87,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         Msg.send({ type: 'ReloadChannelInfo' });
                     })
 
-                    var plotButtons = [];
-                    $.each(MetaData.tableCatalog, function(idx, tableInfo) {
-                        var plotButton = Controls.Button(null, { content: '<b>'+tableInfo.name+'</b> scatterplot', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
-                        plotButton .setOnChanged(function() {
-                            ItemScatterPlot.Create(tableInfo.id);
-                        })
-                        plotButtons.push(plotButton);
-                    })
-
-
                     this.panelButtons.addControl(Controls.CompoundHor([
                         Controls.CompoundVert(tableButtons).setTreatAsBlock(),
-                        Controls.CompoundVert(plotButtons).setTreatAsBlock(),
                         Controls.CompoundVert([browserButton, bt_addprops, bt_refresh]).setTreatAsBlock(),
                         //Controls.ColorPicker(null, {label: 'Color', value: DQX.Color(1,1,0)})
                     ]));

@@ -1,5 +1,5 @@
-define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/DocEl", "DQX/Utils", "DQX/SQL", "DQX/QueryTable", "DQX/QueryBuilder", "DQX/DataFetcher/DataFetchers", "MetaData"],
-    function (require, Application, Framework, Controls, Msg, DocEl, DQX, SQL, QueryTable, QueryBuilder, DataFetchers, MetaData) {
+define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/DocEl", "DQX/Utils", "DQX/SQL", "DQX/QueryTable", "DQX/QueryBuilder", "DQX/DataFetcher/DataFetchers", "MetaData", "Plots/ItemScatterPlot", "Plots/BarGraph"],
+    function (require, Application, Framework, Controls, Msg, DocEl, DQX, SQL, QueryTable, QueryBuilder, DataFetchers, MetaData, ItemScatterPlot, BarGraph) {
 
         //A helper function, turning a fraction into a 3 digit text string
         var createFuncVal2Text = function(digits) {
@@ -72,11 +72,10 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 //This function is called during the initialisation. Create the frame structure of the view here
                 that.createFrames = function(rootFrame) {
                     rootFrame.makeGroupHor();//Declare the root frame as a horizontally divided set of subframes
-                    this.frameQueriesContainer = rootFrame.addMemberFrame(Framework.FrameGroupTab('', 0.4));//Create frame that will contain the query panels
-                    this.frameQueryAdvanced = this.frameQueriesContainer.addMemberFrame(Framework.FrameFinal('')).setAllowScrollBars(true,true)
+                    this.frameQueriesContainer = rootFrame.addMemberFrame(Framework.FrameGroupVert('', 0.4));//Create frame that will contain the query panels
+                    this.frameControls = this.frameQueriesContainer.addMemberFrame(Framework.FrameFinal('',0.4))
+                    this.frameQueryAdvanced = this.frameQueriesContainer.addMemberFrame(Framework.FrameFinal('',0.6)).setAllowScrollBars(true,true)
                         .setDisplayTitle('Advanced query');//Create frame that will contain the query panels
-                    this.frameQuerySimple = this.frameQueriesContainer.addMemberFrame(Framework.FrameFinal(''))
-                        .setDisplayTitle('Simple query');//Create frame that will contain the query panels
                     this.frameTable = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.6))//Create frame that will contain the table viewer
                         .setAllowScrollBars(false,true);
                 }
@@ -100,12 +99,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     this.reLoad();
 
                     // Create the "simple query" panel
-                    this.createPanelSimpleQuery();
-
-                    //Make sure that the query results are reset each time another type of query is chosen
-                    Msg.listen('',{ type: 'ChangeTab', id: this.frameQueriesContainer.getFrameID() }, function() {
-                        that.panelTable.invalidateQuery();
-                    });
+                    this.createPanelControls();
 
                 };
 
@@ -140,14 +134,26 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 };
 
 
-                that.createPanelSimpleQuery = function () {
-                    this.panelSimpleQuery = Framework.Form(this.frameQuerySimple);
+                that.createPanelControls = function () {
+                    this.panelSimpleQuery = Framework.Form(this.frameControls);
                     this.panelSimpleQuery.setPadding(10);
                     var queryButton = Controls.Button(null, { content: 'Define query...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
                     queryButton .setOnChanged(function() {
                         Msg.send({ type: 'EditQuery'}, that.tableid);
                     })
-                    this.panelSimpleQuery.addControl(Controls.CompoundVert([queryButton]));
+                    var cmdScatterPlot = Controls.Button(null, { content: 'Scatter plot...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
+                    cmdScatterPlot .setOnChanged(function() {
+                        ItemScatterPlot.Create(that.tableid);
+                    })
+                    var cmdBarGraph = Controls.Button(null, { content: 'Bar graph...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
+                    cmdBarGraph .setOnChanged(function() {
+                        BarGraph.Create(that.tableid);
+                    })
+                    this.panelSimpleQuery.addControl(Controls.CompoundHor([
+                        queryButton,
+                        cmdScatterPlot,
+                        cmdBarGraph
+                    ]));
                 }
 
                 that.reLoad = function() {
