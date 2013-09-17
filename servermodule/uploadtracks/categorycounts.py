@@ -7,10 +7,17 @@ def response(returndata):
     workspaceid = DQXDbTools.ToSafeIdentifier(returndata['workspaceid'])
     tableid = DQXDbTools.ToSafeIdentifier(returndata['tableid'])
     propid1 = DQXDbTools.ToSafeIdentifier(returndata['propid1'])
+    encodedquery = returndata['qry']
 
     propid2 = None
     if 'propid2' in returndata:
         propid2 = DQXDbTools.ToSafeIdentifier(returndata['propid2'])
+
+    whc=DQXDbTools.WhereClause()
+    whc.ParameterPlaceHolder='%s'#NOTE!: MySQL PyODDBC seems to require this nonstardard coding
+    whc.Decode(encodedquery)
+    whc.CreateSelectStatement()
+
 
     db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
@@ -19,8 +26,12 @@ def response(returndata):
     if propid2 is None:
         categories1 = []
         categorycounts = []
-        sql = 'select {1}, count({1}) as _cnt from {0} group by {1} order by _cnt desc limit 10000;'.format(tableid, propid1)
-        cur.execute(sql)
+        sql = 'select {1}, count({1}) as _cnt from {0}'.format(tableid, propid1)
+        if len(whc.querystring_params) > 0:
+            sql += " WHERE {0}".format(whc.querystring_params)
+        sql += ' group by {1} order by _cnt desc limit 10000;'.format(tableid, propid1)
+        print(sql)
+        cur.execute(sql,whc.queryparams)
         for row in cur.fetchall():
             categories1.append(row[0])
             categorycounts.append(row[1])

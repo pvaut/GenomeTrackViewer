@@ -11,6 +11,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
             var tableInfo = MetaData.mapTableCatalog[tableid];
             var that = PopupFrame.PopupFrame(tableInfo.name + ' bargraph', {title:'Bar graph', blocking:false, sizeX:700, sizeY:550 });
             that.tableInfo = tableInfo;
+            that.query = SQL.WhereClause.Trivial();
             that.fetchCount = 0;
             that.showRelative = false;
 
@@ -58,7 +59,10 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 that.panelButtons = Framework.Form(that.frameButtons).setPadding(5);
 
                 var buttonDefineQuery = Controls.Button(null, { content: 'Define query...'}).setOnChanged(function() {
-                    EditQuery.CreateDialogBox(that.tableInfo.tableid);
+                    EditQuery.CreateDialogBox(that.tableInfo.id, that.query, function(query) {
+                        that.query = query;
+                        that.fetchData();
+                    });
                 });
 
                 var propList = [ {id:'', name:'-- None --'}];
@@ -110,6 +114,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
             that.fetchData = function() {
                 that.catpropid1 = that.ctrlCatProperty1.getValue();
                 that.catpropid2 = that.ctrlCatProperty2.getValue();
+                if (!that.catpropid1)
+                    return;
                 DQX.setProcessing();
                 var data ={};
                 data.database = MetaData.database;
@@ -118,6 +124,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 data.propid1 = that.catpropid1;
                 if (that.catpropid2)
                     data.propid2 = that.catpropid2;
+                data.qry = SQL.WhereClause.encode(that.query);
                 DQX.customRequest(MetaData.serverUrl,'uploadtracks','categorycounts', data, function(resp) {
                     DQX.stopProcessing();
                     if ('Error' in resp) {

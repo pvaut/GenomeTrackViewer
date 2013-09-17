@@ -85,6 +85,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 //This function is called during the initialisation. Create the panels that will populate the frames here
                 that.createPanels = function() {
 
+                    MetaData.mapTableCatalog[that.tableid].tableViewer = that;
+
                     //Initialise the data fetcher that will download the data for the table
                     this.theTableFetcher = DataFetchers.Table(
                         MetaData.serverUrl,
@@ -231,7 +233,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     that.myTable.queryAll();
 
                     // Define an "advanced query" panel
-                    this.panelTable.createPanelAdvancedQuery(this.frameQueryAdvanced, function() {
+                    that.panelTable.panelAdvancedQueryBuilder = this.panelTable.createPanelAdvancedQuery(this.frameQueryAdvanced, function() {
                         var theQuery = that.panelTable.panelAdvancedQueryBuilder.getQuery();
                         if (theQuery.isTrivial)
                             theQuery = null;
