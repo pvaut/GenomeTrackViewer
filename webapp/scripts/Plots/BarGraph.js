@@ -12,6 +12,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
             var that = PopupFrame.PopupFrame(tableInfo.name + ' bargraph', {title:'Bar graph', blocking:false, sizeX:700, sizeY:550 });
             that.tableInfo = tableInfo;
             that.fetchCount = 0;
+            that.showRelative = false;
 
             that.eventids = [];
 
@@ -79,9 +80,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
 
                 that.ctrlCatType = Controls.Check(null,{ label:'Sum to 100%'  })
                 that.ctrlCatType.setOnChanged(function() {
-                    //that.fetchData();
+                    that.showRelative = that.ctrlCatType.getValue();
+                    that.reDraw();
                 });
                 that.ctrlCatType.modifyEnabled(false);
+
+                that.colorLegend = Controls.Html(null,'');
 
                 that.panelButtons.addControl(Controls.CompoundVert([
                     buttonDefineQuery,
@@ -90,9 +94,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     Controls.VerticalSeparator(20),
                     that.ctrlCatProperty2,
                     that.ctrlCatType,
-                    Controls.VerticalSeparator(10)
-//                    pickControls,
-//                    that.colorLegend
+                    Controls.VerticalSeparator(10),
+                    that.colorLegend
                 ]));
 
             };
@@ -100,30 +103,89 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
 
             that.fetchData = function() {
                 that.catpropid1 = that.ctrlCatProperty1.getValue();
+                that.catpropid2 = that.ctrlCatProperty2.getValue();
                 DQX.setProcessing();
                 var data ={};
                 data.database = MetaData.database;
                 data.workspaceid = MetaData.workspaceid;
                 data.tableid = that.tableInfo.id + 'CMB_' + MetaData.workspaceid;
                 data.propid1 = that.catpropid1;
+                if (that.catpropid2)
+                    data.propid2 = that.catpropid2;
                 DQX.customRequest(MetaData.serverUrl,'uploadtracks','categorycounts', data, function(resp) {
                     DQX.stopProcessing();
-                    Msg.send({ type: 'ReloadChannelInfo' });
                     if ('Error' in resp) {
                         alert(resp.Error);
                         return;
                     }
-                    var decoder = DataDecoders.ValueListDecoder();
-                    that.categories = decoder.doDecode(resp.categories);
-                    that.categorycounts = decoder.doDecode(resp.categorycounts);
-                    that.maxcount = 0;
-                    $.each(that.categorycounts, function(idx, cnt) {
-                        that.maxcount = Math.max(that.maxcount,cnt);
-                    });
+                    if (!that.catpropid2)
+                        that.prepareData1Cat(resp);
+                    else
+                        that.prepareData2Cat(resp);
                     var sizeX = that.scaleW + that.categories.length * that.barW;
                     that.panelPlot.setFixedWidth(sizeX+20);
                     that.reDraw();
                 });
+            }
+
+            that.prepareData1Cat = function(resp) {
+                var decoder = DataDecoders.ValueListDecoder();
+                var categories1 = decoder.doDecode(resp.categories1);
+                var categorycounts = decoder.doDecode(resp.categorycounts);
+                that.maxcount = 0;
+                that.categories = [];
+                $.each(categorycounts, function(idx, cnt) {
+                    that.categories.push({ name:categories1[idx], count:cnt });
+                    that.maxcount = Math.max(that.maxcount,cnt);
+                });
+                that.colorLegend.modifyValue('');
+            }
+
+            that.prepareData2Cat = function(resp) {
+                var decoder = DataDecoders.ValueListDecoder();
+                var categories1 = decoder.doDecode(resp.categories1);
+                var categories2 = decoder.doDecode(resp.categories2);
+                var categorycounts = decoder.doDecode(resp.categorycounts);
+                that.categories = [];
+                var catMap = {}
+                var subCatMap = {}
+                var subCats = [];
+                $.each(categorycounts, function(idx, cnt) {
+                    if (!(categories1[idx] in catMap)) {
+                        var cat = { name:categories1[idx], count:0, subcats:[] };
+                        that.categories.push(cat);
+                        catMap[cat.name] = cat;
+                    }
+                    var cat = catMap[categories1[idx]];
+                    if (!(categories2[idx] in subCatMap)) {
+                        var subcat = { name:categories2[idx] };
+                        subCats.push(subcat.name);
+                        subCatMap[subcat.name] = subcat;
+                    }
+                    cat.count += cnt;
+                    cat.subcats.push({ name:categories2[idx], count:cnt });
+
+                    //that.categories.push({ name:categories1[idx], count:cnt });
+                    //that.maxcount = Math.max(that.maxcount,cnt);
+                });
+                that.maxcount = 0;
+                $.each(that.categories,function(idx, cat) {
+                    that.maxcount = Math.max(that.maxcount,cat.count);
+                });
+                var colormapper = MetaData.findProperty(that.tableInfo.id,that.catpropid2).category2Color;
+                colormapper.map(subCats);
+
+                var legendStr = '';
+                $.each(subCats,function(idx, subcat) {
+                    var color = DQX.Color(0.5,0.5,0.5);
+                    if (colormapper.get(subcat)>=0)
+                        color = DQX.standardColors[colormapper.get(subcat)];
+                    legendStr+='<span style="background-color:{cl}">&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;{name}<br>'.DQXformat({
+                        cl:color.toString(),
+                        name:subcat
+                    });
+                });
+                that.colorLegend.modifyValue(legendStr);
 
             }
 
@@ -150,11 +212,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 that.plotH = drawInfo.sizeY - that.textH - 60;
 
                 ctx.font="12px Arial";
-                for (var i=0; i<that.categories.length; i++) {
+                $.each(that.categories, function(idx, cat) {
+                    var sumcount = that.maxcount;
+                    if (that.showRelative)
+                        sumcount = cat.count;
+                    sumcount = Math.max(1,sumcount);
+
                     ctx.fillStyle="rgb(220,220,220)";
-                    var h = that.categorycounts[i]*1.0/that.maxcount * that.plotH;
-                    var px1 = that.scaleW + i * that.barW + 0.5;
-                    var px2 = that.scaleW + (i+1) * that.barW + 0.5;
+                    var h = cat.count*1.0/sumcount * that.plotH;
+                    var px1 = that.scaleW + idx * that.barW + 0.5;
+                    var px2 = that.scaleW + (idx+1) * that.barW + 0.5;
                     var py1 = drawInfo.sizeY-that.textH + 0.5;
                     var py2 = drawInfo.sizeY-that.textH -Math.round(h) + 0.5;
                     ctx.beginPath();
@@ -172,7 +239,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     ctx.save();
                     ctx.translate((px1+px2)/2,py1+5);
                     ctx.rotate(-Math.PI/2);
-                    ctx.fillText(that.categories[i],0,0);
+                    ctx.fillText(cat.name,0,0);
                     ctx.restore();
                     //Draw count
                     ctx.fillStyle="rgb(150,150,150)";
@@ -181,11 +248,35 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     ctx.save();
                     ctx.translate((px1+px2)/2,py2-2);
                     ctx.rotate(-Math.PI/2);
-                    ctx.fillText(that.categorycounts[i],0,0);
+                    ctx.fillText(cat.count,0,0);
                     ctx.restore();
 
+                    if (that.catpropid2) {
+                        var colorMapper = MetaData.findProperty(that.tableInfo.id,that.catpropid2).category2Color;
+                        var cumulcount = 0;
+                        $.each(cat.subcats, function(idx, subcat) {
+                            var h1 = cumulcount*1.0/sumcount * that.plotH;
+                            var h2 = (cumulcount+subcat.count)*1.0/sumcount * that.plotH;
+                            var py1 = drawInfo.sizeY-that.textH - Math.round(h1) + 0.5;
+                            var py2 = drawInfo.sizeY-that.textH - Math.round(h2) + 0.5;
+                            var colNr = colorMapper.get(subcat.name);
+                            if (colNr>=0)
+                                ctx.fillStyle=DQX.standardColors[colNr].toStringCanvas();
+                            else
+                                ctx.fillStyle='rgb(100,100,100)';
+                            ctx.beginPath();
+                            ctx.moveTo(px1, py2);
+                            ctx.lineTo(px1, py1);
+                            ctx.lineTo(px2, py1);
+                            ctx.lineTo(px2, py2);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.stroke();
+                            cumulcount += subcat.count;
+                        });
+                    }
+                });
 
-                }
 
                 that.plotPresent = true;
             };

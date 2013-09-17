@@ -156,7 +156,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                                             prop.toDisplayString = function(vl) { return parseFloat(vl).toFixed(prop.settings.decimDigits); }
                                         if (prop.isBoolean)
                                             prop.toDisplayString = function(vl) { return parseInt(vl)?'Yes':'No'; }
-
+                                        prop.category2Color = DQX.PersistentAssociator(DQX.standardColors.length);
                                     });
                                     if (proceedFunction) proceedFunction();
                                 }
