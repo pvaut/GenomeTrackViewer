@@ -72,6 +72,11 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     that.fetchData();
                 });
 
+                that.ctrlCatSort1 = Controls.Combo(null,{ label:'Sort by:', states: [{id:'cat', name:'Category'}, {id:'count', name:'Count'}] })
+                that.ctrlCatSort1.setOnChanged(function() {
+                    that.fetchData();
+                });
+
                 that.ctrlCatProperty2 = Controls.Combo(null,{ label:'Secondary group:', states: propList })
                 that.ctrlCatProperty2.setOnChanged(function() {
                     that.ctrlCatType.modifyEnabled(that.ctrlCatProperty2.getValue()!='');
@@ -91,6 +96,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     buttonDefineQuery,
                     Controls.VerticalSeparator(20),
                     that.ctrlCatProperty1,
+                    that.ctrlCatSort1,
                     Controls.VerticalSeparator(20),
                     that.ctrlCatProperty2,
                     that.ctrlCatType,
@@ -122,6 +128,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                         that.prepareData1Cat(resp);
                     else
                         that.prepareData2Cat(resp);
+                    that.sortCats();
                     var sizeX = that.scaleW + that.categories.length * that.barW;
                     that.panelPlot.setFixedWidth(sizeX+20);
                     that.reDraw();
@@ -189,6 +196,19 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
 
             }
 
+            that.sortCats = function() {
+                if (that.ctrlCatSort1.getValue()=='cat') {
+                    that.categories = _.sortBy(that.categories, function(val) {
+                        return val.name;
+                    });
+                }
+                else {
+                    that.categories = _.sortBy(that.categories, function(val) {
+                        return -val.count;
+                    });
+                }
+            };
+
 
             that.reloadAll = function() {
             }
@@ -214,7 +234,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 ctx.font="12px Arial";
                 $.each(that.categories, function(idx, cat) {
                     var sumcount = that.maxcount;
-                    if (that.showRelative)
+                    if (that.showRelative && (that.catpropid2) )
                         sumcount = cat.count;
                     sumcount = Math.max(1,sumcount);
 
