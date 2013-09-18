@@ -31,7 +31,7 @@ def response(returndata):
             sql += " WHERE {0}".format(whc.querystring_params)
         sql += ' group by {1} order by _cnt desc limit 10000;'.format(tableid, propid1)
         print(sql)
-        cur.execute(sql,whc.queryparams)
+        cur.execute(sql, whc.queryparams)
         for row in cur.fetchall():
             categories1.append(row[0])
             categorycounts.append(row[1])
@@ -42,8 +42,11 @@ def response(returndata):
         categories1 = []
         categories2 = []
         categorycounts = []
-        sql = 'select {1}, {2}, count({1}) as _cnt from {0} group by {1}, {2} limit 10000;'.format(tableid, propid1, propid2)
-        cur.execute(sql)
+        sql = 'select {1}, {2}, count({1}) as _cnt from {0}'.format(tableid, propid1, propid2)
+        if len(whc.querystring_params) > 0:
+            sql += " WHERE {0}".format(whc.querystring_params)
+        sql += ' group by {1}, {2} limit 10000;'.format(tableid, propid1, propid2)
+        cur.execute(sql, whc.queryparams)
         for row in cur.fetchall():
             categories1.append(row[0])
             categories2.append(row[1])

@@ -22,7 +22,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.panelButtons = Framework.Form(that.frameButtons);
 
                 that.builder = MetaData.mapTableCatalog[that.tableInfo.id].tableViewer.panelTable.createPanelAdvancedQuery(that.frameBody, function() {
-                });
+                }, true);
                 that.builder.setQuery(that.query);
 
                 var bt_ok = Controls.Button(null, { content: 'OK'}).setOnChanged(that.onOK);

@@ -12,6 +12,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
             var that = PopupFrame.PopupFrame(tableInfo.name + ' bargraph', {title:'Bar graph', blocking:false, sizeX:700, sizeY:550 });
             that.tableInfo = tableInfo;
             that.query = SQL.WhereClause.Trivial();
+            if (tableInfo.currentQuery)
+                that.query = tableInfo.currentQuery;
             that.fetchCount = 0;
             that.showRelative = false;
 

@@ -1,5 +1,5 @@
-define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/DocEl", "DQX/Utils", "DQX/SQL", "DQX/QueryTable", "DQX/QueryBuilder", "DQX/DataFetcher/DataFetchers", "MetaData", "Plots/ItemScatterPlot", "Plots/BarGraph"],
-    function (require, Application, Framework, Controls, Msg, DocEl, DQX, SQL, QueryTable, QueryBuilder, DataFetchers, MetaData, ItemScatterPlot, BarGraph) {
+define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/DocEl", "DQX/Utils", "DQX/SQL", "DQX/QueryTable", "DQX/QueryBuilder", "DQX/DataFetcher/DataFetchers", "MetaData", "Plots/ItemScatterPlot", "Plots/BarGraph", "Wizards/EditQuery"],
+    function (require, Application, Framework, Controls, Msg, DocEl, DQX, SQL, QueryTable, QueryBuilder, DataFetchers, MetaData, ItemScatterPlot, BarGraph, EditQuery) {
 
         //A helper function, turning a fraction into a 3 digit text string
         var createFuncVal2Text = function(digits) {
@@ -52,13 +52,12 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 if (tableid == 'SNP') {
                     Msg.listen('',{type: 'ShowSNPsInRange'}, function(scope, info) {
                         that.activateState();
-                        var queryBuilder=that.panelTable.panelAdvancedQueryBuilder;
                         var qry= SQL.WhereClause.AND([
                             SQL.WhereClause.CompareFixed('chrom','=',info.chrom),
                             SQL.WhereClause.CompareFixed('pos','>=',info.start),
                             SQL.WhereClause.CompareFixed('pos','<=',info.stop)
                             ]);
-                        queryBuilder.setQuery(qry);
+                        //queryBuilder.setQuery(qry);
                         that.myTable.setQuery(qry);
                         that.myTable.reLoadTable();
                         var tableInfo = MetaData.mapTableCatalog[that.tableid];
@@ -72,10 +71,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 //This function is called during the initialisation. Create the frame structure of the view here
                 that.createFrames = function(rootFrame) {
                     rootFrame.makeGroupHor();//Declare the root frame as a horizontally divided set of subframes
-                    this.frameQueriesContainer = rootFrame.addMemberFrame(Framework.FrameGroupVert('', 0.4));//Create frame that will contain the query panels
-                    this.frameControls = this.frameQueriesContainer.addMemberFrame(Framework.FrameFinal('',0.4))
-                    this.frameQueryAdvanced = this.frameQueriesContainer.addMemberFrame(Framework.FrameFinal('',0.6)).setAllowScrollBars(true,true)
-                        .setDisplayTitle('Advanced query');//Create frame that will contain the query panels
+                    //this.frameQueriesContainer = rootFrame.addMemberFrame(Framework.FrameGroupVert('', 0.4));//Create frame that will contain the query panels
+                    this.frameControls = rootFrame.addMemberFrame(Framework.FrameFinal('',0.4)).setFixedSize(Framework.dimX,200)
                     this.frameTable = rootFrame.addMemberFrame(Framework.FrameFinal('', 0.6))//Create frame that will contain the table viewer
                         .setAllowScrollBars(false,true);
                 }
@@ -141,7 +138,13 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     this.panelSimpleQuery.setPadding(10);
                     var queryButton = Controls.Button(null, { content: 'Define query...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
                     queryButton .setOnChanged(function() {
-                        Msg.send({ type: 'EditQuery'}, that.tableid);
+                        var tableInfo = MetaData.mapTableCatalog[that.tableid];
+                        EditQuery.CreateDialogBox(tableInfo.id, tableInfo.currentQuery, function(query) {
+                            that.myTable.setQuery(query);
+                            that.myTable.reLoadTable();
+                            tableInfo.currentQuery = query;
+                            Msg.broadcast({ type: 'QueryChanged'}, that.tableid );
+                        });
                     })
                     var cmdScatterPlot = Controls.Button(null, { content: 'Scatter plot...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
                     cmdScatterPlot .setOnChanged(function() {
@@ -151,7 +154,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     cmdBarGraph .setOnChanged(function() {
                         BarGraph.Create(that.tableid);
                     })
-                    this.panelSimpleQuery.addControl(Controls.CompoundHor([
+                    this.panelSimpleQuery.addControl(Controls.CompoundVert([
                         queryButton,
                         cmdScatterPlot,
                         cmdBarGraph
@@ -231,15 +234,6 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     //we start by defining a query that returns everything
                     that.myTable.queryAll();
-
-                    // Define an "advanced query" panel
-                    that.panelTable.panelAdvancedQueryBuilder = this.panelTable.createPanelAdvancedQuery(this.frameQueryAdvanced, function() {
-                        var theQuery = that.panelTable.panelAdvancedQueryBuilder.getQuery();
-                        if (theQuery.isTrivial)
-                            theQuery = null;
-                        MetaData.mapTableCatalog[that.tableid].currentQuery = theQuery;
-                        Msg.broadcast({ type: 'QueryChanged'}, that.tableid );
-                    });
 
                 }
 

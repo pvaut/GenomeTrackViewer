@@ -59,7 +59,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                         MetaData.mapTableCatalog = {};
                         $.each(MetaData.tableCatalog, function(idx, table) {
                             table.hasGenomePositions = table.IsPositionOnGenome=='1';
-                            table.currentQuery = null;
+                            table.currentQuery = SQL.WhereClause.Trivial();
                             table.currentSelection = {};
                             if (table.hasGenomePositions)
                                 table.genomeBrowserInfo = {};
