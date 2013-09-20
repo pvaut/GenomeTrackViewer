@@ -14,7 +14,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.frameBody = that.frameRoot.addMemberFrame(Framework.FrameFinal('', 0.7))
                     .setAllowScrollBars(true,true);
                 that.frameButtons = that.frameRoot.addMemberFrame(Framework.FrameFinal('', 0.3))
-                    .setFixedSize(Framework.dimY, 90);
+                    .setFixedSize(Framework.dimY, 70).setFrameClassClient('DQXGrayClient');
             };
 
             that.createPanels = function() {
@@ -25,17 +25,28 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 }, true);
                 that.builder.setQuery(that.query);
 
-                var bt_ok = Controls.Button(null, { content: 'OK'}).setOnChanged(that.onOK);
-                that.panelButtons.addControl(bt_ok);
+                var bt_cancel = Controls.Button(null, { buttonClass: 'DQXWizardButton', content: 'Cancel', bitmap: DQX.BMP('cancel.png'), width:80, height:25 }).setOnChanged(function() {
+                    that.close();
+                });
+                var bt_apply = Controls.Button(null, { buttonClass: 'DQXWizardButton', content: 'Apply', bitmap: DQX.BMP('apply.png'), width:80, height:25 }).setOnChanged(function() {
+                    var query = that.builder.getQuery();
+                    proceedFunction(query);
+                });
+                var bt_ok = Controls.Button(null, { buttonClass: 'DQXWizardButton', content: 'OK', bitmap: DQX.BMP('ok.png'), width:80, height:25 }).setOnChanged(that.onOK);
+                that.panelButtons.addControl(Controls.AlignRight(Controls.CompoundHor([
+                    bt_cancel,
+                    Controls.HorizontalSeparator(10),
+                    bt_apply,
+                    bt_ok,
+                    Controls.HorizontalSeparator(7)
+                ])));
 
             };
 
             that.onOK = function() {
-
                 var query = that.builder.getQuery();
                 that.close();
                 proceedFunction(query);
-
             }
 
             that.create();
