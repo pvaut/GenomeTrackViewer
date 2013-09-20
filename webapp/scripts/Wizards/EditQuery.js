@@ -5,7 +5,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
 
         EditQuery.CreateDialogBox = function(tableid, query, proceedFunction) {
-            var that = PopupFrame.PopupFrame('editquery', {title:'Edit query', blocking:true, sizeX:700, sizeY:600 });
+            var that = PopupFrame.PopupFrame('editquery', {title:'Edit query', blocking:true, sizeX:700, sizeY:500 });
             that.tableInfo = MetaData.mapTableCatalog[tableid];
             that.query = query;
 

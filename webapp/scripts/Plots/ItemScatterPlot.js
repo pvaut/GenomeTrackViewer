@@ -1,5 +1,5 @@
-define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/SQL", "DQX/DocEl", "DQX/Utils", "DQX/Wizard", "DQX/Popup", "DQX/PopupFrame", "DQX/FrameCanvas", "DQX/DataFetcher/DataFetchers", "MetaData"],
-    function (require, base64, Application, Framework, Controls, Msg, SQL, DocEl, DQX, Wizard, Popup, PopupFrame, FrameCanvas, DataFetchers, MetaData) {
+define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/SQL", "DQX/DocEl", "DQX/Utils", "DQX/Wizard", "DQX/Popup", "DQX/PopupFrame", "DQX/FrameCanvas", "DQX/DataFetcher/DataFetchers", "Wizards/EditQuery", "MetaData"],
+    function (require, base64, Application, Framework, Controls, Msg, SQL, DocEl, DQX, Wizard, Popup, PopupFrame, FrameCanvas, DataFetchers, EditQuery, MetaData) {
 
         var ItemScatterPlot = {};
 
@@ -11,6 +11,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             var tableInfo = MetaData.mapTableCatalog[tableid];
             var that = PopupFrame.PopupFrame(tableInfo.name + ' scatterplot', {title:'Scatter plot', blocking:false, sizeX:700, sizeY:550 });
             that.tableInfo = tableInfo;
+            that.query = SQL.WhereClause.Trivial();
+            if (tableInfo.currentQuery)
+                that.query = tableInfo.currentQuery;
             that.fetchCount = 0;
             that.propDataMap = {};
 
@@ -30,12 +33,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
             });
 
             that.eventids = [];
-
-            var eventid = DQX.getNextUniqueID();that.eventids.push(eventid);
-            Msg.listen(eventid,{ type: 'QueryChanged'}, function(scope,tableid) {
-                if (that.tableInfo.id==tableid)
-                    that.reloadAll();
-            } );
 
             var eventid = DQX.getNextUniqueID();that.eventids.push(eventid);
             Msg.listen(eventid,{ type: 'SelectionUpdated'}, function(scope,tableid) {
@@ -67,10 +64,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.panelPlot.onSelected = that.onSelected;
                 that.panelButtons = Framework.Form(that.frameButtons).setPadding(5);
 
-
-                that.queryTypeControl = Controls.Combo(null, { label: 'Selection:', states:[{id:'query', name:'Current query'}, {id:'all', name:'All'}], value:'query'}).setOnChanged(function() {
-                    that.reloadAll();
+                var buttonDefineQuery = Controls.Button(null, { content: 'Define query...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: DQX.BMP('filter1.png') });
+                buttonDefineQuery.setOnChanged(function() {
+                    EditQuery.CreateDialogBox(that.tableInfo.id, that.query, function(query) {
+                        that.query = query;
+                        that.ctrlQueryString.modifyValue(tableInfo.tableViewer.getQueryDescription(query));
+                        that.reloadAll();
+                    });
                 });
+
+                that.ctrlQueryString = Controls.Html(null,tableInfo.tableViewer.getQueryDescription(that.query));
 
                 var pickControls = Controls.CompoundGrid();
                 $.each(that.plotAspects,function(aspectIdx, plotAspect) {
@@ -97,8 +100,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 that.colorLegend = Controls.Html(null,'');
 
                 that.panelButtons.addControl(Controls.CompoundVert([
-                    that.queryTypeControl,
-                    Controls.VerticalSeparator(10),
+                    buttonDefineQuery,
+                    that.ctrlQueryString,
+                    Controls.VerticalSeparator(20),
                     pickControls,
                     that.colorLegend
                 ]));
@@ -143,12 +147,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         fetcher.addColumn(aspectInfo.propid, encoding);
                         that.fetchCount += 1;
                         that.panelPlot.invalidate();
-                        var query = SQL.WhereClause.Trivial();
-                        if ((that.queryTypeControl.getValue()=='query') && (that.tableInfo.currentQuery) )
-                            query = that.tableInfo.currentQuery;
                         var requestID = DQX.getNextUniqueID();
                         aspectInfo.requestID = requestID;
-                        fetcher.getData(query, that.tableInfo.primkey, function (data) {
+                        fetcher.getData(that.query, that.tableInfo.primkey, function (data) {
                             that.fetchCount -= 1;
                             if (aspectInfo.requestID != requestID) {//request must be outdated, so we don't handle it
                                 return;

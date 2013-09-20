@@ -25,12 +25,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
 
 
             var eventid = DQX.getNextUniqueID();that.eventids.push(eventid);
-            Msg.listen(eventid,{ type: 'QueryChanged'}, function(scope,tableid) {
-                if (that.tableInfo.id==tableid)
-                    that.reloadAll();
-            } );
-
-            var eventid = DQX.getNextUniqueID();that.eventids.push(eventid);
             Msg.listen(eventid,{ type: 'SelectionUpdated'}, function(scope,tableid) {
                 if (that.tableInfo.id==tableid)
                     that.reDraw();
@@ -60,12 +54,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 that.panelPlot.onSelected = that.onSelected;
                 that.panelButtons = Framework.Form(that.frameButtons).setPadding(5);
 
-                var buttonDefineQuery = Controls.Button(null, { content: 'Define query...'}).setOnChanged(function() {
+                var buttonDefineQuery = Controls.Button(null, { content: 'Define query...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: DQX.BMP('filter1.png') });
+                buttonDefineQuery.setOnChanged(function() {
                     EditQuery.CreateDialogBox(that.tableInfo.id, that.query, function(query) {
                         that.query = query;
+                        that.ctrlQueryString.modifyValue(tableInfo.tableViewer.getQueryDescription(query));
                         that.fetchData();
                     });
                 });
+
+                that.ctrlQueryString = Controls.Html(null,tableInfo.tableViewer.getQueryDescription(that.query));
 
                 var propList = [ {id:'', name:'-- None --'}];
                 $.each(MetaData.customProperties, function(idx, prop) {
@@ -100,6 +98,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
 
                 that.panelButtons.addControl(Controls.CompoundVert([
                     buttonDefineQuery,
+                    that.ctrlQueryString,
                     Controls.VerticalSeparator(20),
                     that.ctrlCatProperty1,
                     that.ctrlCatSort1,

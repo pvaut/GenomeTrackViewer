@@ -37,7 +37,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 // Instantiate the view object
                 var that = Application.View(
                     'table_'+tableid,  // View ID
-                    'Table viewer'  // View title
+                    MetaData.mapTableCatalog[tableid].name+' table'  // View title
                 );
 
                 that.tableid = tableid;
@@ -57,12 +57,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             SQL.WhereClause.CompareFixed('pos','>=',info.start),
                             SQL.WhereClause.CompareFixed('pos','<=',info.stop)
                             ]);
-                        //queryBuilder.setQuery(qry);
-                        that.myTable.setQuery(qry);
-                        that.myTable.reLoadTable();
-                        var tableInfo = MetaData.mapTableCatalog[that.tableid];
-                        tableInfo.currentQuery = qry;
-                        Msg.broadcast({ type: 'QueryChanged'}, that.tableid );
+                        that.updateQuery(qry);
                     });
 
                 }
@@ -136,29 +131,56 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                 that.createPanelControls = function () {
                     this.panelSimpleQuery = Framework.Form(this.frameControls);
                     this.panelSimpleQuery.setPadding(10);
-                    var queryButton = Controls.Button(null, { content: 'Define query...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
+                    that.ctrlQueryString = Controls.Html(null,'');
+                    var queryButton = Controls.Button(null, { content: 'Define query...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: DQX.BMP('filter1.png') });
                     queryButton .setOnChanged(function() {
                         var tableInfo = MetaData.mapTableCatalog[that.tableid];
                         EditQuery.CreateDialogBox(tableInfo.id, tableInfo.currentQuery, function(query) {
-                            that.myTable.setQuery(query);
-                            that.myTable.reLoadTable();
-                            tableInfo.currentQuery = query;
-                            Msg.broadcast({ type: 'QueryChanged'}, that.tableid );
+                            that.updateQuery(query);
                         });
                     })
-                    var cmdScatterPlot = Controls.Button(null, { content: 'Scatter plot...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
+                    var cmdScatterPlot = Controls.Button(null, { content: 'Scatter plot...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: 'Bitmaps/circle_red_small.png' });
                     cmdScatterPlot .setOnChanged(function() {
                         ItemScatterPlot.Create(that.tableid);
                     })
-                    var cmdBarGraph = Controls.Button(null, { content: 'Bar graph...', buttonClass: 'DQXToolButton2', width:120, height:50, bitmap: 'Bitmaps/circle_red_small.png' });
+                    var cmdBarGraph = Controls.Button(null, { content: 'Bar graph...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: 'Bitmaps/circle_red_small.png' });
                     cmdBarGraph .setOnChanged(function() {
                         BarGraph.Create(that.tableid);
                     })
                     this.panelSimpleQuery.addControl(Controls.CompoundVert([
                         queryButton,
+                        that.ctrlQueryString,
+                        Controls.VerticalSeparator(15),
                         cmdScatterPlot,
                         cmdBarGraph
                     ]));
+                }
+
+                that.getQueryDescription = function(qry) {
+                    var str = '<div style="background-color: rgb(255,240,230);width:100%">';
+                    if (!qry.isTrivial) {
+                        nameMap = {};
+                        $.each(MetaData.customProperties,function(idx,propInfo) {
+                            if (propInfo.tableid == that.tableid)
+                                nameMap[propInfo.propid] = {
+                                    name: propInfo.name,
+                                    toDisplayString: propInfo.toDisplayString
+                                };
+                        });
+                        str += '<span style="color: rgb(128,0,0)"><b>Active query:</b></span><br><span style="color: rgb(128,0,0);font-size:80%">'+qry.toDisplayString(nameMap,0)+'</span>';
+                    }
+                    str += '</div>';
+                    return str;
+                }
+
+
+                that.updateQuery = function(qry) {
+                    that.myTable.setQuery(qry);
+                    that.myTable.reLoadTable();
+                    var tableInfo = MetaData.mapTableCatalog[that.tableid];
+                    tableInfo.currentQuery = qry;
+                    Msg.broadcast({ type: 'QueryChanged'}, that.tableid );
+                    that.ctrlQueryString.modifyValue(that.getQueryDescription(qry));
                 }
 
                 that.reLoad = function() {
