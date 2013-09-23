@@ -49,7 +49,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
             that.createPanels = function() {
                 that.panelPlot = FrameCanvas(that.framePlot);
                 that.panelPlot.draw = that.draw;
-                //that.panelPlot.getToolTipInfo = that.getToolTipInfo;
+                that.panelPlot.getToolTipInfo = that.getToolTipInfo;
                 that.panelPlot.onMouseClick = that.onMouseClick;
                 that.panelPlot.onSelected = that.onSelected;
                 that.panelButtons = Framework.Form(that.frameButtons).setPadding(5);
@@ -157,6 +157,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
             }
 
             that.prepareData2Cat = function(resp) {
+                var propInfo2 = MetaData.findProperty(that.tableInfo.id,that.catpropid2);
                 var decoder = DataDecoders.ValueListDecoder();
                 var categories1 = decoder.doDecode(resp.categories1);
                 var categories2 = decoder.doDecode(resp.categories2);
@@ -197,7 +198,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                         color = DQX.standardColors[colormapper.get(subcat)];
                     legendStr+='<span style="background-color:{cl}">&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;{name}<br>'.DQXformat({
                         cl:color.toString(),
-                        name:subcat
+                        name:propInfo2.toDisplayString(subcat)
                     });
                 });
                 that.colorLegend.modifyValue(legendStr);
@@ -236,8 +237,18 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 if (!that.categories) {
                     return;
                 }
+                var propInfo1 = MetaData.findProperty(that.tableInfo.id,that.catpropid1);
+                if (that.catpropid2)
+                    var propInfo2 = MetaData.findProperty(that.tableInfo.id,that.catpropid2);
 
                 that.plotH = drawInfo.sizeY - that.textH - 60;
+
+                that.hoverItems = [];
+
+                var totcount  = 0;
+                $.each(that.categories, function(idx, cat) {
+                    totcount += cat.count;
+                });
 
                 ctx.font="12px Arial";
                 $.each(that.categories, function(idx, cat) {
@@ -267,7 +278,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     ctx.save();
                     ctx.translate((px1+px2)/2,py1+5);
                     ctx.rotate(-Math.PI/2);
-                    ctx.fillText(cat.name,0,0);
+                    ctx.fillText(propInfo1.toDisplayString(cat.name),0,0);
                     ctx.restore();
                     //Draw count
                     ctx.fillStyle="rgb(150,150,150)";
@@ -278,6 +289,18 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     ctx.rotate(-Math.PI/2);
                     ctx.fillText(cat.count,0,0);
                     ctx.restore();
+
+                    var label = propInfo1.name+': '+propInfo1.toDisplayString(cat.name);
+                    label += '<br>Count: {ct} ({fr}%)'.DQXformat({ ct:cat.count, fr:(cat.count/totcount*100).toFixed(2)});
+                    that.hoverItems.push({
+                         //itemid: ids[bestidx],
+                         ID: 'i'+DQX.getNextUniqueID(),
+                         px: (px1+px2)/2,
+                         py: (py1+py2)/2,
+                         //showPointer:true,
+                         content: label,
+                         px1:px1, px2:px2, py1:py1, py2:py2
+                     });
 
                     if (that.catpropid2) {
                         var colorMapper = MetaData.findProperty(that.tableInfo.id,that.catpropid2).category2Color;
@@ -301,6 +324,24 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                             ctx.fill();
                             ctx.stroke();
                             cumulcount += subcat.count;
+
+                            var label = propInfo1.name+': '+propInfo1.toDisplayString(cat.name);
+                            label += '<br>'+propInfo2.name+': '+propInfo2.toDisplayString(subcat.name);
+                            label += '<br>Count: {ct} (of class: {fr1}%, of total: {fr2}%)'.DQXformat({
+                                ct:subcat.count,
+                                fr1:(subcat.count/sumcount*100).toFixed(2),
+                                fr2:(subcat.count/totcount*100).toFixed(2)
+                            });
+                            that.hoverItems.push({
+                                //itemid: ids[bestidx],
+                                ID: 'i'+DQX.getNextUniqueID(),
+                                px: (px1+px2)/2,
+                                py: (py1+py2)/2,
+                                //showPointer:true,
+                                content: label,
+                                px1:px1, px2:px2, py1:py1, py2:py2
+                            });
+
                         });
                     }
                 });
@@ -309,6 +350,23 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 that.plotPresent = true;
             };
 
+            that.getToolTipInfo = function(px0 ,py0) {
+                if (!that.plotPresent) return;
+                var hoverItem = null;
+                $.each(that.hoverItems, function(idx, item) {
+                    if ( (px0>=item.px1) && (px0<=item.px2) && (py0>=item.py2) && (py0<=item.py1) )
+                        hoverItem = item;
+                });
+                return $.extend({},hoverItem);
+/*                return {
+                    itemid: ids[bestidx],
+                    ID: 'IDX'+bestidx,
+                    px: valX[bestidx] * scaleX + offsetX,
+                    py: valY[bestidx] * scaleY + offsetY,
+                    showPointer:true,
+                    content: str
+                };    */
+            };
 
 
 
