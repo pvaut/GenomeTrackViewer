@@ -217,7 +217,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                         theChannel
                                             .setTitle(channelName)
                                             .setHeight(150,true)
-                                            .setMaxViewportSizeX(5.0e5)
+                                            .setMaxViewportSizeX(50.0e5)
                                             .setChangeYScale(true,true);
                                         that.panelBrowser.addChannel(theChannel, false);
                                         channelMap[channelId] = theChannel;
