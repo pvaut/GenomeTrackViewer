@@ -78,6 +78,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     that.createSnpPositionChannel();
 
+                    that.createSummaryChannels();
+
                     that.reLoad();
 
                 };
@@ -146,6 +148,55 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         Msg.send({ type: 'ItemPopup' }, { tableid:'SNP', itemid:snpid } );//Send a message that should trigger showing the snp popup
                     })
                     that.panelBrowser.addChannel(theChannel, false);//Add the channel to the browser
+                }
+
+
+
+                //Creates channels in the browser that displaying various summary properties
+                that.createSummaryChannels = function() {
+                    //Create the data fetcher that will get the summary values from the server
+                    this.dataFetcherProfiles = new DataFetcherSummary.Fetcher(
+                        MetaData.serverUrl,     //url of the DQXServer instance providing the data
+                        5,                      //minimum block size of the finest grained block
+                        800                     //desired number of data points filling the viewport
+                    );
+
+                    summaryFolder = 'SummaryTracks/' + MetaData.database;
+
+
+                    //Iterate over all summary profiles shown by the app
+                    $.each(MetaData.summaryValues,function(idx,summaryValue) {
+                        var folder=summaryFolder+'/'+summaryValue.propid;//The server folder where to find the info, relative to the DQXServer base path
+                        var SummChannel = ChannelYVals.Channel(null, { minVal: 0, maxVal: 100 });//Create the channel
+                        SummChannel
+                            .setTitle(summaryValue.name).setHeight(120, true)
+                            .setChangeYScale(true,true);//makes the scale adjustable by dragging it
+                        that.panelBrowser.addChannel(SummChannel);//Add the channel to the browser
+                        //that.channelControls.push(SummChannel.createVisibilityControl());//Create a visibility checkbox for the component, and add to the list of controls
+
+                        //Create the min-max range
+                        var colinfo_min = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_min");//get the min value from the fetcher
+                        var colinfo_max = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_max");//get the max value from the fetcher
+                        SummChannel.addComponent(ChannelYVals.YRange(null,//Define the range component
+                            that.dataFetcherProfiles,               // data fetcher containing the profile information
+                            colinfo_min.myID,                       // fetcher column id for the min value
+                            colinfo_max.myID,                       // fetcher column id for the max value
+                            DQX.Color(0.3, 0.3, 0.7, 0.35)          // color of the range
+                        ), true );
+
+                        //Create the average value profile
+                        var colinfo_avg = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_avg");//get the avg value from the fetcher
+                        var comp = SummChannel.addComponent(ChannelYVals.Comp(null,//Add the profile to the channel
+                            that.dataFetcherProfiles,               // data fetcher containing the profile information
+                            colinfo_avg.myID                        // fetcher column id containing the average profile
+                        ), true);
+                        comp.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
+                        comp.myPlotHints.makeDrawLines(3000000.0); //that causes the points to be connected with lines
+                        comp.myPlotHints.interruptLineAtAbsent = true;
+                        comp.myPlotHints.drawPoints = false;//only draw lines, no individual points
+
+                    })
+
                 }
 
 
