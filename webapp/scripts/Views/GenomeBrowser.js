@@ -68,6 +68,11 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     this.panelBrowser.getAnnotationFetcher().setFeatureType('gene', 'CDS');
 
+                    this.panelBrowser.getAnnotationChannel().setMinDrawZoomFactX(1.0/999999);
+
+                    if (MetaData.generalSettings.AnnotMaxViewportSize)
+                        this.panelBrowser.getAnnotationChannel().setMaxViewportSizeX(MetaData.generalSettings.AnnotMaxViewportSize*1.0E6);
+
                     //Define the action when a user clicks on a gene in the annotation channel
                     this.panelBrowser.getAnnotationChannel().handleFeatureClicked = function (geneID) {
                         Msg.send({type:'GenePopup'}, geneID);

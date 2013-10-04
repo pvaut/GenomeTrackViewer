@@ -53,9 +53,14 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
 
                 var getter = DataFetchers.ServerDataGetter();
                 getter.addTable('tablecatalog',['id','name','primkey', 'IsPositionOnGenome'],'id');
+                getter.addTable('settings',['id','content'],'id');
                 getter.execute(MetaData.serverUrl,MetaData.database,
                     function() { // Upon completion of data fetching
                         MetaData.tableCatalog = getter.getTableRecords('tablecatalog');
+                        MetaData.generalSettings = {};
+                        $.each(getter.getTableRecords('settings'), function(idx,sett) {
+                            MetaData.generalSettings[sett.id] = sett.content;
+                        });
                         MetaData.mapTableCatalog = {};
                         $.each(MetaData.tableCatalog, function(idx, table) {
                             table.hasGenomePositions = table.IsPositionOnGenome=='1';
