@@ -78,6 +78,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         Msg.send({type:'GenePopup'}, geneID);
                     }
 
+                    if (MetaData.generalSettings.RefSequenceSumm=='Yes') {
+                        SeqChannel = ChannelSequence.Channel(MetaData.serverUrl, 'SummaryTracks/' + MetaData.database+'/Sequence', 'Summ');
+                        this.panelBrowser.addChannel(SeqChannel, true);
+
+                    }
+
                     that.visibilityControlsGroup = this.panelControls.addControl(Controls.CompoundVert([]));
 
 
