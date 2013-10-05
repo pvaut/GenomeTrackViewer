@@ -165,10 +165,15 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                 //Creates channels in the browser that displaying various summary properties
                 that.createSummaryChannels = function() {
+
+                    // !!! this needs to be more generic, and refreshed when necessary
+                    if (MetaData.summaryValues.length==0)
+                        return;
+
                     //Create the data fetcher that will get the summary values from the server
                     this.dataFetcherProfiles = new DataFetcherSummary.Fetcher(
                         MetaData.serverUrl,     //url of the DQXServer instance providing the data
-                        5,                      //minimum block size of the finest grained block
+                        MetaData.summaryValues[0].minblocksize,                      //minimum block size of the finest grained block
                         800                     //desired number of data points filling the viewport
                     );
 
