@@ -164,44 +164,71 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 //Creates channels in the browser that displaying various summary properties
                 that.createSummaryChannels = function() {
 
+                    if (that.listDataFetcherProfiles) {
+                        $.each(that.listDataFetcherProfiles, function(idx,fetcher) {
+                            that.panelBrowser.delDataFetcher(fetcher);
+                        });
+                    }
+
+                    if (that.listSummaryChannels) {
+                        $.each(that.listSummaryChannels, function(idx, channelid) {
+                            that.panelBrowser.delChannel(channelid);
+                        })
+                    }
+
                     // !!! this needs to be more generic, and refreshed when necessary
                     if (MetaData.summaryValues.length==0)
                         return;
 
-                    //Create the data fetcher that will get the summary values from the server
-                    this.dataFetcherProfiles = new DataFetcherSummary.Fetcher(
-                        MetaData.serverUrl,     //url of the DQXServer instance providing the data
-                        MetaData.summaryValues[0].minblocksize,                      //minimum block size of the finest grained block
-                        800                     //desired number of data points filling the viewport
-                    );
+
+                    that.listDataFetcherProfiles = [];
+                    that.listSummaryChannels = [];
 
                     summaryFolder = 'SummaryTracks/' + MetaData.database;
 
 
                     //Iterate over all summary profiles shown by the app
                     $.each(MetaData.summaryValues,function(idx,summaryValue) {
+
+                        //Try to find suitable existing fetcher
+                        var theFetcher = null;
+                        $.each(that.listDataFetcherProfiles,function(idx,fetcher) {
+                            if ( (fetcher.minblocksize==summaryValue.minblocksize) && (fetcher.usedChannelCount<30) )
+                                theFetcher = fetcher;
+                        });
+                        if (!theFetcher) {
+                            theFetcher = new DataFetcherSummary.Fetcher(MetaData.serverUrl,summaryValue.minblocksize,800);
+                            theFetcher.usedChannelCount = 0;
+                            theFetcher.minblocksize=summaryValue.minblocksize;
+                            that.listDataFetcherProfiles.push(theFetcher);
+                        }
+                        theFetcher.usedChannelCount++;
+
+                        //Create the data fetcher that will get the summary values from the server
+
+                        var channelid='summ_'+summaryValue.propid;
                         var folder=summaryFolder+'/'+summaryValue.propid;//The server folder where to find the info, relative to the DQXServer base path
-                        var SummChannel = ChannelYVals.Channel(null, { minVal: summaryValue.minval, maxVal: summaryValue.maxval });//Create the channel
+                        var SummChannel = ChannelYVals.Channel(channelid, { minVal: summaryValue.minval, maxVal: summaryValue.maxval });//Create the channel
                         SummChannel
                             .setTitle(summaryValue.name).setHeight(120, true)
                             .setChangeYScale(true,true);//makes the scale adjustable by dragging it
                         that.panelBrowser.addChannel(SummChannel);//Add the channel to the browser
-                        //that.channelControls.push(SummChannel.createVisibilityControl());//Create a visibility checkbox for the component, and add to the list of controls
+                        that.listSummaryChannels.push(channelid);
 
                         //Create the min-max range
-                        var colinfo_min = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_min");//get the min value from the fetcher
-                        var colinfo_max = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_max");//get the max value from the fetcher
+                        var colinfo_min = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_min");//get the min value from the fetcher
+                        var colinfo_max = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_max");//get the max value from the fetcher
                         var comp_minmax = SummChannel.addComponent(ChannelYVals.YRange(null,//Define the range component
-                            that.dataFetcherProfiles,               // data fetcher containing the profile information
+                            theFetcher,               // data fetcher containing the profile information
                             colinfo_min.myID,                       // fetcher column id for the min value
                             colinfo_max.myID,                       // fetcher column id for the max value
                             DQX.Color(0.3, 0.3, 0.7, 0.35)          // color of the range
                         ), true );
 
                         //Create the average value profile
-                        var colinfo_avg = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_avg");//get the avg value from the fetcher
+                        var colinfo_avg = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_avg");//get the avg value from the fetcher
                         var comp_avg = SummChannel.addComponent(ChannelYVals.Comp(null,//Add the profile to the channel
-                            that.dataFetcherProfiles,               // data fetcher containing the profile information
+                            theFetcher,               // data fetcher containing the profile information
                             colinfo_avg.myID                        // fetcher column id containing the average profile
                         ), true);
                         comp_avg.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
