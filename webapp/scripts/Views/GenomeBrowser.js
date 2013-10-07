@@ -89,8 +89,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     that.createSnpPositionChannel();
 
-                    that.createSummaryChannels();
-
                     that.reLoad();
 
                 };
@@ -193,7 +191,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         //Create the min-max range
                         var colinfo_min = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_min");//get the min value from the fetcher
                         var colinfo_max = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_max");//get the max value from the fetcher
-                        SummChannel.addComponent(ChannelYVals.YRange(null,//Define the range component
+                        var comp_minmax = SummChannel.addComponent(ChannelYVals.YRange(null,//Define the range component
                             that.dataFetcherProfiles,               // data fetcher containing the profile information
                             colinfo_min.myID,                       // fetcher column id for the min value
                             colinfo_max.myID,                       // fetcher column id for the max value
@@ -202,14 +200,18 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                         //Create the average value profile
                         var colinfo_avg = that.dataFetcherProfiles.addFetchColumn(folder, 'Summ', summaryValue.propid + "_avg");//get the avg value from the fetcher
-                        var comp = SummChannel.addComponent(ChannelYVals.Comp(null,//Add the profile to the channel
+                        var comp_avg = SummChannel.addComponent(ChannelYVals.Comp(null,//Add the profile to the channel
                             that.dataFetcherProfiles,               // data fetcher containing the profile information
                             colinfo_avg.myID                        // fetcher column id containing the average profile
                         ), true);
-                        comp.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
-                        comp.myPlotHints.makeDrawLines(3000000.0); //that causes the points to be connected with lines
-                        comp.myPlotHints.interruptLineAtAbsent = true;
-                        comp.myPlotHints.drawPoints = false;//only draw lines, no individual points
+                        comp_avg.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
+                        comp_avg.myPlotHints.makeDrawLines(3000000.0); //that causes the points to be connected with lines
+                        comp_avg.myPlotHints.interruptLineAtAbsent = true;
+                        comp_avg.myPlotHints.drawPoints = false;//only draw lines, no individual points
+
+
+                        var ctrl_onoff = SummChannel.createVisibilityControl(true);
+                        that.visibilityControlsGroup.addControl(ctrl_onoff);
 
                     })
 
@@ -222,6 +224,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     that.uptodate = true;
 
                     that.visibilityControlsGroup.clear();
+
+                    that.createSummaryChannels();
+
 
                     $.each(MetaData.mapTableCatalog,function(tableid,tableInfo) {
                         if (tableInfo.hasGenomePositions) {

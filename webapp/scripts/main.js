@@ -140,6 +140,16 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                             getter.execute(MetaData.serverUrl,MetaData.database,
                                 function() { // Upon completion of data fetching
                                     MetaData.summaryValues = getter.getTableRecords('summaryvalues');
+                                    $.each(MetaData.summaryValues, function(idx, summaryValue) {
+                                        if (summaryValue.minval)
+                                            summaryValue.minval = parseFloat(summaryValue.minval);
+                                        else
+                                            summaryValue.minval = 0;
+                                        if (summaryValue.maxval)
+                                            summaryValue.maxval = parseFloat(summaryValue.maxval);
+                                        else
+                                            summaryValue.maxval = 0;
+                                    });
                                     MetaData.customProperties = getter.getTableRecords('propertycatalog');
                                     $.each(MetaData.customProperties, function(idx, prop) {
                                         prop.isCustom = (prop.source=='custom');

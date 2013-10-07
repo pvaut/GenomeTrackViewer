@@ -97,7 +97,8 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                     this.panelCalculations = FrameList(this.frameCalculations);
 
-                    that.updateCalculationInfo();
+                    if (MetaData.updateCalculationInfo)
+                        that.updateCalculationInfo();
 
                 }
 
