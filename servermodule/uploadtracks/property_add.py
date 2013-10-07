@@ -25,6 +25,8 @@ def ResponseExecute(data, calculationObject):
         raise Exception('Information is currently being updated. Please try again later')
     updateLock.release()
 
+    cleanup=False
+
     with updateLock:
         databaseName = DQXDbTools.ToSafeIdentifier(data['database'])
         workspaceid = DQXDbTools.ToSafeIdentifier(data['workspaceid'])
@@ -90,8 +92,9 @@ def ResponseExecute(data, calculationObject):
         os.system(cmd)
         cmd = config.mysqlcommand + " -u {0} -p{1} {2} < {3}".format(config.DBUSER, config.DBPASS, databaseName, tmpfile_dump)
         os.system(cmd)
-        os.remove(tmpfile_create)
-        os.remove(tmpfile_dump)
+        if cleanup:
+            os.remove(tmpfile_create)
+            os.remove(tmpfile_dump)
 
         sourcetable=Utils.GetTableWorkspaceProperties(workspaceid, tableid)
 
@@ -144,8 +147,9 @@ def ResponseExecute(data, calculationObject):
         print('=========== STATEMENT '+sql)
         cur.execute(sql)
 
-        calculationObject.SetInfo('Cleaning up')
-        cur.execute("DROP TABLE {0}".format(tmptable))
+        if cleanup:
+            calculationObject.SetInfo('Cleaning up')
+            cur.execute("DROP TABLE {0}".format(tmptable))
 
         #Insert info about properties
         for prop in properties:
