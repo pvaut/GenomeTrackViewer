@@ -183,7 +183,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     //Iterate over all summary profiles shown by the app
                     $.each(MetaData.summaryValues,function(idx,summaryValue) {
                         var folder=summaryFolder+'/'+summaryValue.propid;//The server folder where to find the info, relative to the DQXServer base path
-                        var SummChannel = ChannelYVals.Channel(null, { minVal: 0, maxVal: 100 });//Create the channel
+                        var SummChannel = ChannelYVals.Channel(null, { minVal: summaryValue.minval, maxVal: summaryValue.maxval });//Create the channel
                         SummChannel
                             .setTitle(summaryValue.name).setHeight(120, true)
                             .setChangeYScale(true,true);//makes the scale adjustable by dragging it
