@@ -133,12 +133,14 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                             var getter = DataFetchers.ServerDataGetter();
                             getter.addTable('propertycatalog',['propid','datatype','tableid','source','name', 'settings'],'ordr',
                                 SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
-                                );
+                            );
                             getter.addTable('summaryvalues',['propid','name','minval','maxval','minblocksize'],'propid',
                                 SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
                             );
+                            getter.addTable('externallinks',['linktype','linkname','linkurl'],'linkname');
                             getter.execute(MetaData.serverUrl,MetaData.database,
                                 function() { // Upon completion of data fetching
+                                    MetaData.externalLinks = getter.getTableRecords('externallinks');
                                     MetaData.summaryValues = getter.getTableRecords('summaryvalues');
                                     $.each(MetaData.summaryValues, function(idx, summaryValue) {
                                         if (summaryValue.minval)
@@ -149,6 +151,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                                             summaryValue.maxval = parseFloat(summaryValue.maxval);
                                         else
                                             summaryValue.maxval = 0;
+                                        summaryValue.minblocksize = parseFloat(summaryValue.minblocksize);
                                     });
                                     MetaData.customProperties = getter.getTableRecords('propertycatalog');
                                     $.each(MetaData.customProperties, function(idx, prop) {

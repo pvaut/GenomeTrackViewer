@@ -48,6 +48,15 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
             content += '<br>';
 
+            $.each(MetaData.externalLinks, function(idx, link) {
+                if (link.linktype=='annotation_gene') {
+                    var button_link = Controls.Button(null, { content: 'Find in '+link.linkname }).setOnChanged(function() {
+                        window.open(link.linkurl.DQXformat({id:data.fid}), '_blank');
+                    });
+                    content += button_link.renderHtml();
+                }
+            });
+/*
             var button_plasmodb = Controls.Button(null, { content: 'Find in PlasmoDb' }).setOnChanged(function() {
                 window.open("http://plasmodb.org/plasmo/showRecord.do?name=GeneRecordClasses.GeneRecordClass&source_id={id}&project_id=PlasmoDB".DQXformat({id:data.fid}), '_blank');
                 //
@@ -58,6 +67,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 window.open('http://www.genedb.org/gene/'+data.fid, '_blank');
             });
             content += button_genedb.renderHtml();
+*/
 
             var popupid = Popup.create('Gene',content);
         }
