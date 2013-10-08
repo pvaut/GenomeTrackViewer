@@ -105,6 +105,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
 
                 that.updateChannelInfo = function(proceedFunction) {
 
+                    var scrollpos = that.panelChannels.getScrollPosVert();
                     this.panelChannels.root.clear();
                     that.panelChannels.render();
 
@@ -114,10 +115,12 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                     });
 
                     var br = that.panelChannels.root.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Genomic values</span>')).setCanSelect(false);
-                    var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Individual points</span>')).setCanSelect(false);
-                    var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Filterbank summarised</span>')).setCanSelect(false);
+                    //var br1 = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Individual points</span>')).setCanSelect(false);
+                    var rootSummary = br.addItem(FrameTree.Branch(null,'<span class="DQXLarge">Filterbank summarised</span>')).setCanSelect(false);
+
 
                     Application.getChannelInfo(function() {
+
                         $.each(MetaData.customProperties, function(idx, prop) {
                             str = '<b><span style="color:{col}">'.DQXformat({col:(prop.isCustom?'black':'rgb(128,0,0)')})+prop.name+'</span></b><span style="color:rgb(150,150,150)"> ';
                             if (prop.name!=prop.propid)
@@ -137,7 +140,26 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             root.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),moveUpButton,Controls.HorizontalSeparator(0),moveDownButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
                         });
 
+                        $.each(MetaData.summaryValues, function(idx, summaryValue) {
+                            str = '<b><span style="color:{col}">'.DQXformat({col:(summaryValue.isCustom?'black':'rgb(128,0,0)')})+summaryValue.name+'</span></b><span style="color:rgb(150,150,150)"> ';
+                            if (summaryValue.name!=summaryValue.propid)
+                                str += summaryValue.propid;
+                            str += '</span>';
+                            var openButton = Controls.LinkButton(null,{smartLink : true, opacity:(summaryValue.isCustom?1:0.15) }).setOnChanged(function() {
+                                EditSummaryValue.execute(summaryValue.propid);
+                            });
+                            var moveUpButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_up_1.png'), vertShift:-2, opacity:0.35 }).setOnChanged(function() {
+                                that.moveSummaryValue(summaryValue.propid,-1);
+                            });
+                            var moveDownButton = Controls.LinkButton(null, { bitmap:DQX.BMP('triangle_down_1.png'), vertShift:-2, opacity:0.35 }).setOnChanged(function() {
+                                that.moveSummaryValue(summaryValue.propid,+1);
+                            });
+                            rootSummary.addItem(FrameTree.Control(Controls.CompoundHor([openButton,Controls.HorizontalSeparator(7),moveUpButton,Controls.HorizontalSeparator(0),moveDownButton,Controls.HorizontalSeparator(7),Controls.Static(str)])));
+                        });
+
+
                         that.panelChannels.render();
+                        that.panelChannels.setScrollPosVert(scrollpos);
                         if (proceedFunction) proceedFunction();
                     });
 

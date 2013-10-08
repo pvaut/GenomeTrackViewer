@@ -152,6 +152,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                                         else
                                             summaryValue.maxval = 0;
                                         summaryValue.minblocksize = parseFloat(summaryValue.minblocksize);
+                                        summaryValue.isCustom = true;
                                     });
                                     MetaData.customProperties = getter.getTableRecords('propertycatalog');
                                     $.each(MetaData.customProperties, function(idx, prop) {
