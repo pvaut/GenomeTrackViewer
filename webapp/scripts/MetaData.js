@@ -8,7 +8,7 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
 
         //MetaData.serverUrl="http://localhost:8000/app01";
         //MetaData.serverUrl="http://localhost/DQXServer/app";
-        MetaData.serverUrl="http://panoptes.cggh.org/sandbox/dqx_server_GenomeTrackViewer/app";
+        MetaData.serverUrl=serverUrl;
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Data source tables
