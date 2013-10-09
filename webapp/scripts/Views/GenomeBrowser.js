@@ -144,10 +144,15 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     theChannel
                         .setTitle("SNP positions")        //sets the title of the channel
                         .setMaxViewportSizeX(5.0e5);     //if more than 5e5 bases are in the viewport, this channel is not shown
-                    theChannel.makeCategoricalColors(//Assign a different color to silent/nonsilent snps
-                        'MutType',               // Name of the column containing a categorical string value that determines the color of the snp
-                        { 'S' :  DQX.Color(1,1,0) , 'N' : DQX.Color(1,0.4,0) }   //Map of value-color pairs
-                    );
+
+                    if (MetaData.hasProperty('SNP','MutType')) {
+                        theChannel.makeCategoricalColors(//Assign a different color to silent/nonsilent snps
+                            'MutType',               // Name of the column containing a categorical string value that determines the color of the snp
+                            { 'S' :  DQX.Color(1,1,0) , 'N' : DQX.Color(1,0.4,0) }   //Map of value-color pairs
+                        );
+                    }
+
+
                     //Define a custom tooltip
                     theChannel.setToolTipHandler(function(snpid) {
                         return 'SNP: '+snpid;

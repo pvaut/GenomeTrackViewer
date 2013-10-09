@@ -48,5 +48,14 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
             DQX.reportError('Property {prop} not found for table {table}'.DQXformat({prop:propid, table: tableid}));
         }
 
+        MetaData.hasProperty = function(tableid, propid) {
+            $.each(MetaData.customProperties, function(idx, propInfo) {
+                if ((propInfo.tableid==tableid) && (propInfo.propid==propid))
+                    return true;
+            });
+            return false;
+        }
+
+
         return MetaData;
     });
