@@ -143,7 +143,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     );
                     theChannel
                         .setTitle("SNP positions")        //sets the title of the channel
-                        .setMaxViewportSizeX(5.0e5);     //if more than 5e5 bases are in the viewport, this channel is not shown
+                        .setMaxViewportSizeX(2.0e4);     //if more than 5e5 bases are in the viewport, this channel is not shown
 
                     if (MetaData.hasProperty('SNP','MutType')) {
                         theChannel.makeCategoricalColors(//Assign a different color to silent/nonsilent snps
@@ -257,9 +257,6 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     that.visibilityControlsGroup.clear();
 
-                    that.createSummaryChannels();
-
-
                     $.each(MetaData.mapTableCatalog,function(tableid,tableInfo) {
                         if (tableInfo.hasGenomePositions) {
                             if (tableInfo.genomeBrowserInfo.dataFetcher) {//Remove any existing channels
@@ -321,7 +318,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                         theChannel
                                             .setTitle(channelName)
                                             .setHeight(150,true)
-                                            .setMaxViewportSizeX(50.0e5)
+                                            .setMaxViewportSizeX(5.0e4)
                                             .setChangeYScale(true,true);
                                         that.panelBrowser.addChannel(theChannel, false);
                                         channelMap[channelId] = theChannel;
@@ -361,6 +358,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     });
 
 
+                    that.createSummaryChannels();
 
 
                     this.panelControls.render();

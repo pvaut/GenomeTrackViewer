@@ -110,6 +110,7 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                         { leftfraction: 50 }
                     );
                     this.myTable = this.panelTable.getTable();// A shortcut variable
+                    this.myTable.immediateFetchRecordCount = false;
 
                     // Add a column for chromosome
                     var comp = that.myTable.createTableColumn(
