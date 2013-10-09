@@ -134,7 +134,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                             getter.addTable('propertycatalog',['propid','datatype','tableid','source','name', 'settings'],'ordr',
                                 SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
                             );
-                            getter.addTable('summaryvalues',['propid','name','minval','maxval','minblocksize'],'propid',
+                            getter.addTable('summaryvalues',['propid','name','minval','maxval','minblocksize'],'name',
                                 SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
                             );
                             getter.addTable('externallinks',['linktype','linkname','linkurl'],'linkname');

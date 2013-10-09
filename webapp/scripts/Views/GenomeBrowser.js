@@ -348,7 +348,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                     var label = propInfo.name;
                                     if (!plotcomp.myPlotHints.color.isBlack())
                                         label = '&nbsp;<span style="background-color:{cl}">&nbsp;&nbsp;</span>&nbsp;'.DQXformat({cl:plotcomp.myPlotHints.color.toString()}) + label;
-                                    var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, label, false);
+                                    var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, label, false, true);
                                     theChannel.controls.addControl(ctrl_onoff);
 
                                 }

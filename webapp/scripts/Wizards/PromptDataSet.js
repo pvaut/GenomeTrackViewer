@@ -14,7 +14,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 function() {
                     PromptDataSet.datasets = getter.getTableRecords('datasetindex');
                     if (MetaData.quickLoad) { // Quick & dirty pick one, for development purposes
-                        MetaData.database = 'pf21viewtracks';
+                        MetaData.database = 'ag';
                         PromptDataSet.proceedFunction();
                     }
                     else
