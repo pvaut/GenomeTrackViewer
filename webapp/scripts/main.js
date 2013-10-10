@@ -132,7 +132,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
 
 
                         //Initialise the application
-                        Application.init('Test application');
+                        Application.init('Panoptes');
 
 
                         Application.getChannelInfo = function(proceedFunction) {
@@ -140,7 +140,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                             getter.addTable('propertycatalog',['propid','datatype','tableid','source','name', 'settings'],'ordr',
                                 SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
                             );
-                            getter.addTable('summaryvalues',['propid','name','minval','maxval','minblocksize','tableid','settings'],'name',
+                            getter.addTable('summaryvalues',['propid','name','minval','maxval','minblocksize','tableid','settings'],'ordr',
                                 SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
                             );
                             getter.addTable('externallinks',['linktype','linkname','linkurl'],'linkname');
