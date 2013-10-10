@@ -85,7 +85,17 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     }
 
-                    that.visibilityControlsGroup = this.panelControls.addControl(Controls.CompoundVert([]));
+                    var bt = Controls.Button(null, { buttonClass: 'DQXToolButton2', content: "Show visible variants in table",  width:120, height:30 }).setOnChanged(function() {
+                        var chromoid = that.panelBrowser.getCurrentChromoID();
+                        var range = that.panelBrowser.getVisibleRange();
+                        Msg.send({type: 'ShowSNPsInRange'}, { chrom:chromoid, start:range.min, stop:range.max });
+                    });
+
+                    that.visibilityControlsGroup = Controls.CompoundVert([]);
+                    this.panelControls.addControl(Controls.CompoundVert([
+                        bt,
+                        that.visibilityControlsGroup
+                    ]));
 
 
                     that.createSnpPositionChannel();
