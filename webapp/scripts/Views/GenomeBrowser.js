@@ -60,6 +60,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     //Initialise a genome browser panel
                     this.panelBrowser = GenomePlotter.Panel(this.frameBrowser, browserConfig);
+                    this.panelBrowser.setMaxXZoomFactor(4.0,6000);
 
                     //Define chromosomes
                     $.each(MetaData.chromosomes,function(idx,chromosome) {
@@ -68,7 +69,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                     this.panelBrowser.getAnnotationFetcher().setFeatureType('gene', 'CDS');
 
-                    this.panelBrowser.getAnnotationChannel().setMinDrawZoomFactX(1.0/999999);
+                    this.panelBrowser.getAnnotationChannel().setMinDrawZoomFactX(1.0/99999999);
 
                     if (MetaData.generalSettings.AnnotMaxViewportSize)
                         this.panelBrowser.getAnnotationChannel().setMaxViewportSizeX(MetaData.generalSettings.AnnotMaxViewportSize*1.0E6);
@@ -137,13 +138,16 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         'SNP'
                     );
 
+                    var tableInfo = MetaData.mapTableCatalog['SNP'];
+
                     var theChannel = ChannelPositions.Channel(null,
                         that.dataFetcherSNPs,   // The datafetcher containing the positions of the snps
                         'snpid'                 // Name of the column containing a unique identifier for each snp
                     );
                     theChannel
-                        .setTitle("SNP positions")        //sets the title of the channel
-                        .setMaxViewportSizeX(2.0e4);     //if more than 5e5 bases are in the viewport, this channel is not shown
+                        .setTitle("SNP positions")
+                        .setMaxViewportSizeX(tableInfo.settings.GenomeMaxViewportSizeX);
+
 
                     if (MetaData.hasProperty('SNP','MutType')) {
                         theChannel.makeCategoricalColors(//Assign a different color to silent/nonsilent snps
@@ -210,6 +214,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
 
                             that.listSummaryChannels.push(channelid);
 
+                            var theColor = DQX.parseColorString(summaryValue.settings.channelColor);;
 
                             //Create the min-max range
                             var colinfo_min = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_min");//get the min value from the fetcher
@@ -218,7 +223,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                 theFetcher,               // data fetcher containing the profile information
                                 colinfo_min.myID,                       // fetcher column id for the min value
                                 colinfo_max.myID,                       // fetcher column id for the max value
-                                DQX.Color(0.3, 0.3, 0.7, 0.35)          // color of the range
+                                theColor.changeOpacity(0.25)
                             ), true );
 
                             //Create the average value profile
@@ -227,7 +232,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                 theFetcher,               // data fetcher containing the profile information
                                 colinfo_avg.myID                        // fetcher column id containing the average profile
                             ), true);
-                            comp_avg.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
+                            comp_avg.setColor(theColor);//set the color of the profile
                             comp_avg.myPlotHints.makeDrawLines(3000000.0); //that causes the points to be connected with lines
                             comp_avg.myPlotHints.interruptLineAtAbsent = true;
                             comp_avg.myPlotHints.drawPoints = false;//only draw lines, no individual points
@@ -262,8 +267,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         theChannel
                             .setTitle(channelName)
                             .setHeight(150,true)
-                            //.setMaxViewportSizeX(5.0e4)
-                            .setChangeYScale(true,true);
+                            .setChangeYScale(false,true);
                         that.panelBrowser.addChannel(theChannel, false);
                         that.channelMap[channelId] = theChannel;
                         theChannel.controls = Controls.CompoundVert([]);
@@ -286,21 +290,17 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     if ((inSeparateChannel) && (MetaData.hasSummaryValue(propInfo.tableid,propInfo.propid))) {
                         var summInfo = MetaData.findSummaryValue(propInfo.tableid,propInfo.propid);
                         summInfo.isDisplayed = true;
+                        var theColor = DQX.parseColorString(summInfo.settings.channelColor);;
                         var theFetcher = that.getSummaryFetcher(summInfo.minblocksize);
                         var summFolder = that.summaryFolder+'/'+propInfo.propid;
                         //Create the min-max range
-                        var colinfo_min = theFetcher.addFetchColumn(summFolder, 'Summ', propInfo.propid + "_min");//get the min value from the fetcher
-                        var colinfo_max = theFetcher.addFetchColumn(summFolder, 'Summ', propInfo.propid + "_max");//get the max value from the fetcher
-                        var comp_minmax = theChannel.addComponent(ChannelYVals.YRange(null,//Define the range component
-                            theFetcher,               // data fetcher containing the profile information
-                            colinfo_min.myID,                       // fetcher column id for the min value
-                            colinfo_max.myID,                       // fetcher column id for the max value
-                            DQX.Color(0.3, 0.3, 0.7, 0.35)          // color of the range
-                        ), true );
+                        var colinfo_min = theFetcher.addFetchColumn(summFolder, 'Summ', propInfo.propid + "_min");
+                        var colinfo_max = theFetcher.addFetchColumn(summFolder, 'Summ', propInfo.propid + "_max");
+                        var comp_minmax = theChannel.addComponent(ChannelYVals.YRange(null,theFetcher,colinfo_min.myID,colinfo_max.myID,theColor.changeOpacity(0.25)), true );
                         //Create the average value profile
                         var colinfo_avg = theFetcher.addFetchColumn(summFolder, 'Summ', propInfo.propid + "_avg");//get the avg value from the fetcher
                         var comp_avg = theChannel.addComponent(ChannelYVals.Comp(null,theFetcher,colinfo_avg.myID), true);
-                        comp_avg.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
+                        comp_avg.setColor(theColor);//set the color of the profile
                         comp_avg.myPlotHints.makeDrawLines(3000000.0); //that causes the points to be connected with lines
                         comp_avg.myPlotHints.interruptLineAtAbsent = true;
                         comp_avg.myPlotHints.drawPoints = false;//only draw lines, no individual points
@@ -309,7 +309,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                     var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, dataFetcher, propInfo.propid), true);//Create the component
                     plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
                     plotcomp.myPlotHints.color = DQX.parseColorString(propInfo.settings.channelColor);
-                    plotcomp.setMaxViewportSizeX(5.0e4);
+                    plotcomp.setMaxViewportSizeX(tableInfo.settings.GenomeMaxViewportSizeX);
                         if (propInfo.settings.connectLines)
                         plotcomp.myPlotHints.makeDrawLines(1.0e99);
                     var label = propInfo.name;
@@ -385,7 +385,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                 MetaData.database,
                                 tableInfo.id + 'CMB_' + MetaData.workspaceid
                             );
-                            dataFetcher.setMaxViewportSizeX(5.0e4);
+                            dataFetcher.setMaxViewportSizeX(tableInfo.settings.GenomeMaxViewportSizeX);
 
                             tableInfo.genomeBrowserInfo.dataFetcher = dataFetcher;
 

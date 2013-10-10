@@ -17,6 +17,10 @@ def response(returndata):
     db = DQXDbTools.OpenDatabase(databaseName)
     cur = db.cursor()
 
+    #Make sure we have a decent ordr field
+    cur.execute("set @rn:=0")
+    cur.execute("update propertycatalog set ordr=(@rn:=@rn+1) order by ordr")
+
     sql = 'SELECT workspaceid, tableid, propid, ordr FROM propertycatalog WHERE ((workspaceid="{0}") or (source="fixed")) and (tableid="{1}") ORDER by ordr'.format(workspaceid, tableid)
     cur.execute(sql)
     workspaces = []

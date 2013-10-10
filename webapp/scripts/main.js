@@ -52,7 +52,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
             function Start_Part2() {
 
                 var getter = DataFetchers.ServerDataGetter();
-                getter.addTable('tablecatalog',['id','name','primkey', 'IsPositionOnGenome'],'id');
+                getter.addTable('tablecatalog',['id','name','primkey', 'IsPositionOnGenome', 'settings'],'id');
                 getter.addTable('settings',['id','content'],'id');
                 getter.execute(MetaData.serverUrl,MetaData.database,
                     function() { // Upon completion of data fetching
@@ -68,6 +68,12 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                             table.currentSelection = {};
                             if (table.hasGenomePositions)
                                 table.genomeBrowserInfo = {};
+
+                            var settings = { GenomeMaxViewportSizeX:50000 };
+                            if (table.settings)
+                                settings = $.extend(settings,JSON.parse(table.settings));
+                            table.settings = settings;
+
                             table.isItemSelected = function(id) { return table.currentSelection[id]; }
                             table.selectItem = function(id, newState) {
                                 if (newState)
@@ -134,7 +140,7 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                             getter.addTable('propertycatalog',['propid','datatype','tableid','source','name', 'settings'],'ordr',
                                 SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
                             );
-                            getter.addTable('summaryvalues',['propid','name','minval','maxval','minblocksize','tableid'],'name',
+                            getter.addTable('summaryvalues',['propid','name','minval','maxval','minblocksize','tableid','settings'],'name',
                                 SQL.WhereClause.OR([SQL.WhereClause.CompareFixed('workspaceid','=',MetaData.workspaceid),SQL.WhereClause.CompareFixed('workspaceid','=','')])
                             );
                             getter.addTable('externallinks',['linktype','linkname','linkurl'],'linkname');
@@ -153,6 +159,10 @@ require(["_", "jquery", "DQX/Application", "DQX/Framework", "DQX/Msg", "DQX/Util
                                             summaryValue.maxval = 0;
                                         summaryValue.minblocksize = parseFloat(summaryValue.minblocksize);
                                         summaryValue.isCustom = true;
+                                        var settings = { channelColor:'rgb(0,0,180)' };
+                                        if (summaryValue.settings)
+                                            settings = $.extend(settings,JSON.parse(summaryValue.settings));
+                                        summaryValue.settings = settings;
                                     });
                                     MetaData.customProperties = getter.getTableRecords('propertycatalog');
                                     $.each(MetaData.customProperties, function(idx, prop) {
