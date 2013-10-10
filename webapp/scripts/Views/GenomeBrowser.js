@@ -165,9 +165,175 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                 }
 
 
+                that.getSummaryFetcher =function(minblocksize) {
+                    //Try to find suitable existing fetcher
+                    var theFetcher = null;
+                    $.each(that.listDataFetcherProfiles,function(idx,fetcher) {
+                        if ( (fetcher.minblocksize==minblocksize) && (fetcher.usedChannelCount<30) )
+                            theFetcher = fetcher;
+                    });
+                    if (!theFetcher) {
+                        theFetcher = new DataFetcherSummary.Fetcher(MetaData.serverUrl,minblocksize,800);
+                        theFetcher.usedChannelCount = 0;
+                        theFetcher.minblocksize=minblocksize;
+                        that.listDataFetcherProfiles.push(theFetcher);
+                    }
+                    theFetcher.usedChannelCount++;
+                    return theFetcher;
+                }
 
                 //Creates channels in the browser that displaying various summary properties
                 that.createSummaryChannels = function() {
+
+                    if (MetaData.summaryValues.length==0)
+                        return;
+
+
+                    //Iterate over all summary profiles shown by the app
+                    $.each(MetaData.summaryValues,function(idx,summaryValue) {
+                        if (!summaryValue.isDisplayed) {
+                            var trackid ='smm'+summaryValue.tableid+'_'+summaryValue.propid;
+                            var theFetcher = that.getSummaryFetcher(summaryValue.minblocksize);
+                            var channelid=trackid;
+                            var folder=that.summaryFolder+'/'+summaryValue.propid;//The server folder where to find the info, relative to the DQXServer base path
+
+                            var SummChannel = that.channelMap[channelid];
+                            if (!SummChannel) {
+                                var SummChannel = ChannelYVals.Channel(channelid, { minVal: summaryValue.minval, maxVal: summaryValue.maxval });//Create the channel
+                                SummChannel
+                                    .setTitle(summaryValue.name).setHeight(120, true)
+                                    .setChangeYScale(true,true);//makes the scale adjustable by dragging it
+                                SummChannel.controls = Controls.CompoundVert([]);
+                                that.panelBrowser.addChannel(SummChannel);//Add the channel to the browser
+                                that.channelMap[channelid] = SummChannel;
+                            }
+
+                            that.listSummaryChannels.push(channelid);
+
+
+                            //Create the min-max range
+                            var colinfo_min = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_min");//get the min value from the fetcher
+                            var colinfo_max = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_max");//get the max value from the fetcher
+                            var comp_minmax = SummChannel.addComponent(ChannelYVals.YRange(null,//Define the range component
+                                theFetcher,               // data fetcher containing the profile information
+                                colinfo_min.myID,                       // fetcher column id for the min value
+                                colinfo_max.myID,                       // fetcher column id for the max value
+                                DQX.Color(0.3, 0.3, 0.7, 0.35)          // color of the range
+                            ), true );
+
+                            //Create the average value profile
+                            var colinfo_avg = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_avg");//get the avg value from the fetcher
+                            var comp_avg = SummChannel.addComponent(ChannelYVals.Comp(null,//Add the profile to the channel
+                                theFetcher,               // data fetcher containing the profile information
+                                colinfo_avg.myID                        // fetcher column id containing the average profile
+                            ), true);
+                            comp_avg.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
+                            comp_avg.myPlotHints.makeDrawLines(3000000.0); //that causes the points to be connected with lines
+                            comp_avg.myPlotHints.interruptLineAtAbsent = true;
+                            comp_avg.myPlotHints.drawPoints = false;//only draw lines, no individual points
+
+
+                            var ctrl_onoff = SummChannel.createVisibilityControl(true);
+                            that.visibilityControlsGroup.addControl(ctrl_onoff);
+
+                        }
+                    })
+
+                }
+
+
+                that.createPropertyChannel = function(tableInfo, propInfo, controlsGroup, dataFetcher) {
+                    var trackid =tableInfo.id+'_'+propInfo.propid;
+                    tableInfo.genomeBrowserInfo.currentCustomProperties.push(trackid);
+                    //Create the channel in the browser that will contain the frequency values
+                    var channelId = propInfo.settings.channelName;
+                    var channelName = propInfo.settings.channelName;
+                    var inSeparateChannel = false;
+                    if (!channelId) {
+                        channelId = trackid;
+                        channelName = propInfo.name;
+                        inSeparateChannel = true;
+                    }
+                    var theChannel = that.channelMap[channelId];
+                    if (!theChannel) {
+                        theChannel = ChannelYVals.Channel(trackid,
+                            { minVal: propInfo.settings.minval, maxVal: propInfo.settings.maxval } // range
+                        );
+                        theChannel
+                            .setTitle(channelName)
+                            .setHeight(150,true)
+                            //.setMaxViewportSizeX(5.0e4)
+                            .setChangeYScale(true,true);
+                        that.panelBrowser.addChannel(theChannel, false);
+                        that.channelMap[channelId] = theChannel;
+                        theChannel.controls = Controls.CompoundVert([]);
+                        if (propInfo.settings.channelName)
+                            theChannel.controls.setLegend(channelName).setAutoFillX(false);
+                        controlsGroup.addControl(theChannel.controls);
+
+                        theChannel.getToolTipContent = function(compID, pointIndex) {
+                            var itemid = dataFetcher.getColumnPoint(pointIndex, tableInfo.primkey);
+                            var pos = dataFetcher.getPosition(pointIndex);
+                            var value = dataFetcher.getColumnPoint(pointIndex, compID);
+                            return itemid+'<br/>Position= '+pos+'<br/>'+MetaData.findProperty(propInfo.tableid,compID).name+'= '+value.toFixed(4);
+                        };
+                        theChannel.handlePointClicked = function(compID, pointIndex) {
+                            var itemid = dataFetcher.getColumnPoint(pointIndex, tableInfo.primkey);
+                            Msg.send({ type: 'ItemPopup' }, { tableid:tableInfo.id, itemid:itemid } );//Send a message that should trigger showing the item popup
+                        };
+                    }
+
+                    if ((inSeparateChannel) && (MetaData.hasSummaryValue(propInfo.tableid,propInfo.propid))) {
+                        var summInfo = MetaData.findSummaryValue(propInfo.tableid,propInfo.propid);
+                        summInfo.isDisplayed = true;
+                        var theFetcher = that.getSummaryFetcher(summInfo.minblocksize);
+                        var summFolder = that.summaryFolder+'/'+propInfo.propid;
+                        //Create the min-max range
+                        var colinfo_min = theFetcher.addFetchColumn(summFolder, 'Summ', propInfo.propid + "_min");//get the min value from the fetcher
+                        var colinfo_max = theFetcher.addFetchColumn(summFolder, 'Summ', propInfo.propid + "_max");//get the max value from the fetcher
+                        var comp_minmax = theChannel.addComponent(ChannelYVals.YRange(null,//Define the range component
+                            theFetcher,               // data fetcher containing the profile information
+                            colinfo_min.myID,                       // fetcher column id for the min value
+                            colinfo_max.myID,                       // fetcher column id for the max value
+                            DQX.Color(0.3, 0.3, 0.7, 0.35)          // color of the range
+                        ), true );
+                        //Create the average value profile
+                        var colinfo_avg = theFetcher.addFetchColumn(summFolder, 'Summ', propInfo.propid + "_avg");//get the avg value from the fetcher
+                        var comp_avg = theChannel.addComponent(ChannelYVals.Comp(null,theFetcher,colinfo_avg.myID), true);
+                        comp_avg.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
+                        comp_avg.myPlotHints.makeDrawLines(3000000.0); //that causes the points to be connected with lines
+                        comp_avg.myPlotHints.interruptLineAtAbsent = true;
+                        comp_avg.myPlotHints.drawPoints = false;//only draw lines, no individual points
+                    }
+
+                    var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, dataFetcher, propInfo.propid), true);//Create the component
+                    plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
+                    plotcomp.myPlotHints.color = DQX.parseColorString(propInfo.settings.channelColor);
+                    plotcomp.setMaxViewportSizeX(5.0e4);
+                        if (propInfo.settings.connectLines)
+                        plotcomp.myPlotHints.makeDrawLines(1.0e99);
+                    var label = propInfo.name;
+                    if (!plotcomp.myPlotHints.color.isBlack())
+                        label = '&nbsp;<span style="background-color:{cl}">&nbsp;&nbsp;</span>&nbsp;'.DQXformat({cl:plotcomp.myPlotHints.color.toString()}) + label;
+                    if (inSeparateChannel) {
+                        var ctrl_onoff = theChannel.createVisibilityControl(true);
+                    }
+                    else {
+                        var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, label, false, true);
+                    }
+                    theChannel.controls.addControl(ctrl_onoff);
+
+                }
+
+
+                that.reLoad = function() {
+                    if (that.uptodate)
+                        return;
+                    that.uptodate = true;
+
+                    that.visibilityControlsGroup.clear();
+
+                    that.channelMap = {};
 
                     if (that.listDataFetcherProfiles) {
                         $.each(that.listDataFetcherProfiles, function(idx,fetcher) {
@@ -181,81 +347,12 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         })
                     }
 
-                    // !!! this needs to be more generic, and refreshed when necessary
-                    if (MetaData.summaryValues.length==0)
-                        return;
-
 
                     that.listDataFetcherProfiles = [];
                     that.listSummaryChannels = [];
 
-                    summaryFolder = 'SummaryTracks/' + MetaData.database;
+                    that.summaryFolder = 'SummaryTracks/' + MetaData.database;
 
-
-                    //Iterate over all summary profiles shown by the app
-                    $.each(MetaData.summaryValues,function(idx,summaryValue) {
-
-                        //Try to find suitable existing fetcher
-                        var theFetcher = null;
-                        $.each(that.listDataFetcherProfiles,function(idx,fetcher) {
-                            if ( (fetcher.minblocksize==summaryValue.minblocksize) && (fetcher.usedChannelCount<30) )
-                                theFetcher = fetcher;
-                        });
-                        if (!theFetcher) {
-                            theFetcher = new DataFetcherSummary.Fetcher(MetaData.serverUrl,summaryValue.minblocksize,800);
-                            theFetcher.usedChannelCount = 0;
-                            theFetcher.minblocksize=summaryValue.minblocksize;
-                            that.listDataFetcherProfiles.push(theFetcher);
-                        }
-                        theFetcher.usedChannelCount++;
-
-                        //Create the data fetcher that will get the summary values from the server
-
-                        var channelid='summ_'+summaryValue.propid;
-                        var folder=summaryFolder+'/'+summaryValue.propid;//The server folder where to find the info, relative to the DQXServer base path
-                        var SummChannel = ChannelYVals.Channel(channelid, { minVal: summaryValue.minval, maxVal: summaryValue.maxval });//Create the channel
-                        SummChannel
-                            .setTitle(summaryValue.name).setHeight(120, true)
-                            .setChangeYScale(true,true);//makes the scale adjustable by dragging it
-                        that.panelBrowser.addChannel(SummChannel);//Add the channel to the browser
-                        that.listSummaryChannels.push(channelid);
-
-                        //Create the min-max range
-                        var colinfo_min = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_min");//get the min value from the fetcher
-                        var colinfo_max = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_max");//get the max value from the fetcher
-                        var comp_minmax = SummChannel.addComponent(ChannelYVals.YRange(null,//Define the range component
-                            theFetcher,               // data fetcher containing the profile information
-                            colinfo_min.myID,                       // fetcher column id for the min value
-                            colinfo_max.myID,                       // fetcher column id for the max value
-                            DQX.Color(0.3, 0.3, 0.7, 0.35)          // color of the range
-                        ), true );
-
-                        //Create the average value profile
-                        var colinfo_avg = theFetcher.addFetchColumn(folder, 'Summ', summaryValue.propid + "_avg");//get the avg value from the fetcher
-                        var comp_avg = SummChannel.addComponent(ChannelYVals.Comp(null,//Add the profile to the channel
-                            theFetcher,               // data fetcher containing the profile information
-                            colinfo_avg.myID                        // fetcher column id containing the average profile
-                        ), true);
-                        comp_avg.setColor(DQX.Color(0, 0, 0.5));//set the color of the profile
-                        comp_avg.myPlotHints.makeDrawLines(3000000.0); //that causes the points to be connected with lines
-                        comp_avg.myPlotHints.interruptLineAtAbsent = true;
-                        comp_avg.myPlotHints.drawPoints = false;//only draw lines, no individual points
-
-
-                        var ctrl_onoff = SummChannel.createVisibilityControl(true);
-                        that.visibilityControlsGroup.addControl(ctrl_onoff);
-
-                    })
-
-                }
-
-
-                that.reLoad = function() {
-                    if (that.uptodate)
-                        return;
-                    that.uptodate = true;
-
-                    that.visibilityControlsGroup.clear();
 
                     $.each(MetaData.mapTableCatalog,function(tableid,tableInfo) {
                         if (tableInfo.hasGenomePositions) {
@@ -288,6 +385,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                                 MetaData.database,
                                 tableInfo.id + 'CMB_' + MetaData.workspaceid
                             );
+                            dataFetcher.setMaxViewportSizeX(5.0e4);
+
                             tableInfo.genomeBrowserInfo.dataFetcher = dataFetcher;
 
                             //add id column to the datafetcher, not plotted but needed for the tooltip & click actions
@@ -296,69 +395,18 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                             if (tableInfo.genomeBrowserInfo.filterByQuery)
                                 dataFetcher.setUserQuery2(tableInfo.currentQuery);
 
-                            //Create a column for each population frequency
                             tableInfo.genomeBrowserInfo.currentCustomProperties = [];
-                            var channelMap = {};
                             $.each(MetaData.customProperties,function(idx,propInfo) {
                                 if ((propInfo.tableid==tableInfo.id) && (propInfo.isFloat) && (propInfo.settings.showInBrowser)) {
-                                    var trackid =tableInfo.id+'_'+propInfo.propid;
-                                    tableInfo.genomeBrowserInfo.currentCustomProperties.push(trackid);
-                                    //Create the channel in the browser that will contain the frequency values
-                                    var channelId = propInfo.settings.channelName;
-                                    var channelName = propInfo.settings.channelName;
-                                    if (!channelId) {
-                                        channelId = trackid;
-                                        channelName = propInfo.name;
-                                    }
-                                    var theChannel = channelMap[channelId];
-                                    if (!theChannel) {
-                                        theChannel = ChannelYVals.Channel(trackid,
-                                            { minVal: propInfo.settings.minval, maxVal: propInfo.settings.maxval } // range
-                                        );
-                                        theChannel
-                                            .setTitle(channelName)
-                                            .setHeight(150,true)
-                                            .setMaxViewportSizeX(5.0e4)
-                                            .setChangeYScale(true,true);
-                                        that.panelBrowser.addChannel(theChannel, false);
-                                        channelMap[channelId] = theChannel;
-                                        theChannel.controls = Controls.CompoundVert([]);
-                                        if (propInfo.settings.channelName)
-                                            theChannel.controls.setLegend(channelName).setAutoFillX(false);
-                                        controlsGroup.addControl(theChannel.controls);
-
-                                        theChannel.getToolTipContent = function(compID, pointIndex) {
-                                            var itemid = dataFetcher.getColumnPoint(pointIndex, tableInfo.primkey);
-                                            var pos = dataFetcher.getPosition(pointIndex);
-                                            var value = dataFetcher.getColumnPoint(pointIndex, compID);
-                                            return itemid+'<br/>Position= '+pos+'<br/>'+MetaData.findProperty(propInfo.tableid,compID).name+'= '+value.toFixed(4);
-                                        };
-                                        theChannel.handlePointClicked = function(compID, pointIndex) {
-                                            var itemid = dataFetcher.getColumnPoint(pointIndex, tableInfo.primkey);
-                                            Msg.send({ type: 'ItemPopup' }, { tableid:tableInfo.id, itemid:itemid } );//Send a message that should trigger showing the item popup
-                                        };
-
-                                    }
-
-                                    var plotcomp = theChannel.addComponent(ChannelYVals.Comp(null, dataFetcher, propInfo.propid), true);//Create the component
-                                    plotcomp.myPlotHints.pointStyle = 1;//chose a sensible way of plotting the points
-                                    plotcomp.myPlotHints.color = DQX.parseColorString(propInfo.settings.channelColor);
-                                    if (propInfo.settings.connectLines)
-                                        plotcomp.myPlotHints.makeDrawLines(1.0e99);
-                                    var label = propInfo.name;
-                                    if (!plotcomp.myPlotHints.color.isBlack())
-                                        label = '&nbsp;<span style="background-color:{cl}">&nbsp;&nbsp;</span>&nbsp;'.DQXformat({cl:plotcomp.myPlotHints.color.toString()}) + label;
-                                    var ctrl_onoff = theChannel.createComponentVisibilityControl(propInfo.propid, label, false, true);
-                                    theChannel.controls.addControl(ctrl_onoff);
-
+                                    that.createPropertyChannel(tableInfo, propInfo, controlsGroup, dataFetcher);
                                 }
                             });
                         }
 
                     });
 
-
                     that.createSummaryChannels();
+
 
 
                     this.panelControls.render();

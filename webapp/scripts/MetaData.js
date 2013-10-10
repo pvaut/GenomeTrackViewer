@@ -49,11 +49,32 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
         }
 
         MetaData.hasProperty = function(tableid, propid) {
+            var isPresent = false;
             $.each(MetaData.customProperties, function(idx, propInfo) {
                 if ((propInfo.tableid==tableid) && (propInfo.propid==propid))
-                    return true;
+                    isPresent = true;
             });
-            return false;
+            return isPresent;
+        }
+
+
+        MetaData.findSummaryValue = function(tableid, propid) {
+            var rs = null;
+            $.each(MetaData.summaryValues, function(idx, propInfo) {
+                if ((propInfo.tableid==tableid) && (propInfo.propid==propid))
+                    rs =  propInfo;
+            });
+            if (rs!=null) return rs;
+            DQX.reportError('Summary value {prop} not found for table {table}'.DQXformat({prop:propid, table: tableid}));
+        }
+
+        MetaData.hasSummaryValue = function(tableid, propid) {
+            var isPresent = false;
+            $.each(MetaData.summaryValues, function(idx, propInfo) {
+                if ((propInfo.tableid==tableid) && (propInfo.propid==propid))
+                    isPresent = true;
+            });
+            return isPresent;
         }
 
 
