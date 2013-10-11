@@ -277,7 +277,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/Framework", "DQX/Contro
                         theChannel
                             .setTitle(channelName)
                             .setHeight(150,true)
-                            .setChangeYScale(false,true);
+                            .setChangeYScale(true,true);
                         that.panelBrowser.addChannel(theChannel, false);
                         that.channelMap[channelId] = theChannel;
                         theChannel.controls = Controls.CompoundVert([]);
