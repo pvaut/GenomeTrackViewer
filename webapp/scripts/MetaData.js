@@ -2,8 +2,8 @@ define(["DQX/Utils", "DQX/Controls", "DQX/Msg", "DQX/Popup"],
     function (DQX, Controls, Msg, Popup) {
         var MetaData = {};
 
-        MetaData.quickLoad = true;
-        MetaData.updateCalculationInfo = false;
+        MetaData.quickLoad = false;
+        MetaData.updateCalculationInfo = true;
 
 
         //MetaData.serverUrl="http://localhost:8000/app01";
