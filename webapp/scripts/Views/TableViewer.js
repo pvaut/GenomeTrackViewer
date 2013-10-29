@@ -1,5 +1,5 @@
-define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/DocEl", "DQX/Utils", "DQX/SQL", "DQX/QueryTable", "DQX/QueryBuilder", "DQX/DataFetcher/DataFetchers", "MetaData", "Plots/ItemScatterPlot", "Plots/BarGraph", "Wizards/EditQuery"],
-    function (require, Application, Framework, Controls, Msg, DocEl, DQX, SQL, QueryTable, QueryBuilder, DataFetchers, MetaData, ItemScatterPlot, BarGraph, EditQuery) {
+define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg", "DQX/DocEl", "DQX/Utils", "DQX/SQL", "DQX/QueryTable", "DQX/QueryBuilder", "DQX/DataFetcher/DataFetchers", "MetaData", "Plots/ItemScatterPlot", "Plots/BarGraph", "Plots/Histogram", "Wizards/EditQuery"],
+    function (require, Application, Framework, Controls, Msg, DocEl, DQX, SQL, QueryTable, QueryBuilder, DataFetchers, MetaData, ItemScatterPlot, BarGraph, Histogram, EditQuery) {
 
         //A helper function, turning a fraction into a 3 digit text string
         var createFuncVal2Text = function(digits) {
@@ -141,20 +141,29 @@ define(["require", "DQX/Application", "DQX/Framework", "DQX/Controls", "DQX/Msg"
                             that.updateQuery(query);
                         });
                     })
-                    var cmdScatterPlot = Controls.Button(null, { content: 'Scatter plot...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: 'Bitmaps/circle_red_small.png' });
-                    cmdScatterPlot .setOnChanged(function() {
-                        ItemScatterPlot.Create(that.tableid);
-                    })
+
+                    var cmdHistogram = Controls.Button(null, { content: 'Histogram...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: 'Bitmaps/circle_red_small.png' });
+                    cmdHistogram.setOnChanged(function() {
+                        Histogram.Create(that.tableid);
+                    });
+
                     var cmdBarGraph = Controls.Button(null, { content: 'Bar graph...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: 'Bitmaps/circle_red_small.png' });
-                    cmdBarGraph .setOnChanged(function() {
+                    cmdBarGraph.setOnChanged(function() {
                         BarGraph.Create(that.tableid);
-                    })
+                    });
+
+                    var cmdScatterPlot = Controls.Button(null, { content: 'Scatter plot...', buttonClass: 'DQXToolButton2', width:120, height:40, bitmap: 'Bitmaps/circle_red_small.png' });
+                    cmdScatterPlot.setOnChanged(function() {
+                        ItemScatterPlot.Create(that.tableid);
+                    });
+
                     this.panelSimpleQuery.addControl(Controls.CompoundVert([
                         queryButton,
                         that.ctrlQueryString,
                         Controls.VerticalSeparator(15),
-                        cmdScatterPlot,
-                        cmdBarGraph
+                        cmdHistogram,
+                        cmdBarGraph,
+                        cmdScatterPlot
                     ]));
                 }
 
