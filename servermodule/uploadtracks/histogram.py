@@ -18,17 +18,20 @@ def response(returndata):
     cur = db.cursor()
     coder = B64.ValueListCoder()
 
-    #Automatically determine bin size
-    sql = 'select min({0}) as _mn, max({0}) as _mx from {1}'.format(propid, tableid)
-    if len(whc.querystring_params) > 0:
-        sql += " WHERE {0}".format(whc.querystring_params)
-    cur.execute(sql, whc.queryparams)
-    rs = cur.fetchone()
-    minval = rs[0]
-    maxval = rs[1]
-    binsize=(maxval-minval)/10.0
-    if binsize<=0:
-        binsize=1
+    if 'binsize' in returndata:
+        binsize=float(returndata['binsize'])
+    else:
+        #Automatically determine bin size
+        sql = 'select min({0}) as _mn, max({0}) as _mx from {1}'.format(propid, tableid)
+        if len(whc.querystring_params) > 0:
+            sql += " WHERE {0}".format(whc.querystring_params)
+        cur.execute(sql, whc.queryparams)
+        rs = cur.fetchone()
+        minval = rs[0]
+        maxval = rs[1]
+        binsize=(maxval-minval)/10.0
+        if binsize<=0:
+            binsize=1
 
 
     returndata['binsize'] = binsize

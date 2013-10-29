@@ -76,13 +76,32 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     that.fetchData();
                 });
 
+                that.ctrl_binsizeAutomatic = Controls.Check(null,{label:'Automatic', value:true}).setOnChanged(function() {
+                    that.ctrl_binsizeValue.modifyEnabled(!that.ctrl_binsizeAutomatic.getValue());
+                    that.ctrl_binsizeUpdate.modifyEnabled(!that.ctrl_binsizeAutomatic.getValue());
+                    if (that.ctrl_binsizeAutomatic.getValue())
+                        that.fetchData();
+                });
 
+                that.ctrl_binsizeValue = Controls.Edit(null,{size:18}).setOnChanged(function() {
+
+                });
+                that.ctrl_binsizeValue.modifyEnabled(false);
+
+                that.ctrl_binsizeUpdate = Controls.Button(null,{content:'Update'}).setOnChanged(function() {
+                    that.fetchData();
+                });
+                that.ctrl_binsizeUpdate.modifyEnabled(false);
+
+                var binsizeGroup = Controls.CompoundVert([that.ctrl_binsizeAutomatic, that.ctrl_binsizeValue, that.ctrl_binsizeUpdate]).setLegend('Bin size');
 
                 that.panelButtons.addControl(Controls.CompoundVert([
                     buttonDefineQuery,
                     that.ctrlQueryString,
                     Controls.VerticalSeparator(20),
-                    that.ctrlValueProperty
+                    that.ctrlValueProperty,
+                    Controls.VerticalSeparator(20),
+                    binsizeGroup
                 ]));
 
             };
@@ -101,6 +120,8 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 data.tableid = that.tableInfo.id + 'CMB_' + MetaData.workspaceid;
                 data.propid = that.propidValue;
                 data.qry = SQL.WhereClause.encode(that.query);
+                if (!that.ctrl_binsizeAutomatic.getValue())
+                    data.binsize = that.ctrl_binsizeValue.getValue();
                 DQX.customRequest(MetaData.serverUrl,'uploadtracks','histogram', data, function(resp) {
                     DQX.stopProcessing();
                     if ('Error' in resp) {
@@ -131,6 +152,9 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                         if (that.maxCount<counts[i])
                             that.maxCount=counts[i]
                     }
+
+                    if (that.ctrl_binsizeAutomatic.getValue())
+                        that.ctrl_binsizeValue.modifyValue(that.bucketSize);
 
 
                     that.reDraw();
