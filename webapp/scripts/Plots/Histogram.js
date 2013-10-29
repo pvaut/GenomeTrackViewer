@@ -110,11 +110,30 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                     var decoder = DataDecoders.ValueListDecoder();
                     var buckets = decoder.doDecode(resp.buckets);
                     var counts = decoder.doDecode(resp.counts);
-                    var binsize = resp.binsize;
+                    that.bucketSize = resp.binsize;
 
-//                    var sizeX = that.scaleW + that.categories.length * that.barW;
-//                    that.panelPlot.setFixedWidth(sizeX+20);
-//                    that.reDraw();
+                    var bucketMin = 1.0e99;
+                    var bucketMax = -1.0e99;
+                    $.each(buckets,function(idx,vl) {
+                        if (vl<bucketMin)
+                            bucketMin=vl;
+                        if (vl<bucketMax)
+                            bucketMax=vl;
+                    });
+
+                    that.bucketNrOffset = bucketMin;
+                    that.bucketCounts=[];
+                    that.maxCount = 1;
+                    for (var i=bucketMin; i<bucketMax; i++)
+                        that.bucketCounts.push(0);
+                    for (var i=0; i<buckets.length; i++) {
+                        that.bucketCounts[buckets[i]-bucketMin] = counts[i];
+                        if (that.maxCount<counts[i])
+                            that.maxCount=counts[i]
+                    }
+
+
+                    that.reDraw();
                 });
 
             }
@@ -135,6 +154,99 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
             }
 
             that.drawImpl = function(drawInfo) {
+
+
+                that.plotPresent = false;
+                var ctx = drawInfo.ctx;
+
+                var marginX = 40;
+                var marginY = 40;
+                ctx.fillStyle="rgb(220,220,220)";
+                ctx.fillRect(0,0,marginX,drawInfo.sizeY);
+                ctx.fillRect(0,drawInfo.sizeY-marginY,drawInfo.sizeX,marginY);
+
+                if (!that.bucketCounts)
+                    return;
+
+                var XMin = that.bucketNrOffset*that.bucketSize;
+                var XMax = (that.bucketNrOffset+that.bucketCounts.length)*that.bucketSize;
+                var XRange = XMax - XMin;
+                XMin -= 0.1*XRange;
+                XMax += 0.1*XRange;
+                var YMin = 0;
+                var YMax = that.maxCount*1.1;
+                var scaleX = (drawInfo.sizeX-marginX) / (XMax - XMin);
+                var offsetX = marginX - XMin*scaleX;
+                var scaleY = - (drawInfo.sizeY-marginY) / (YMax - YMin);
+                var offsetY = (drawInfo.sizeY-marginY) - YMin*scaleY;
+                that.scaleX = scaleX; that.offsetX = offsetX;
+                that.scaleY = scaleY; that.offsetY = offsetY;
+
+                // Draw x scale
+                ctx.save();
+                ctx.font="10px Arial";
+                ctx.fillStyle="rgb(0,0,0)";
+                ctx.textAlign = 'center';
+                var scale = DQX.DrawUtil.getScaleJump(30/scaleX);
+                for (var i=Math.ceil(XMin/scale.Jump1); i<=Math.floor(XMax/scale.Jump1); i++) {
+                    var vl = i*scale.Jump1;
+                    var px = Math.round(vl * scaleX + offsetX)-0.5;
+                    ctx.strokeStyle = "rgb(230,230,230)";
+                    if (i%scale.JumpReduc==0)
+                        ctx.strokeStyle = "rgb(190,190,190)";
+                    ctx.beginPath();
+                    ctx.moveTo(px,0);
+                    ctx.lineTo(px,drawInfo.sizeY-marginY);
+                    ctx.stroke();
+                    if (i%scale.JumpReduc==0) {
+                        ctx.fillText(vl.toFixed(scale.textDecimalCount),px,drawInfo.sizeY-marginY+13);
+                    }
+                }
+                ctx.restore();
+
+                // Draw y scale
+                ctx.save();
+                ctx.font="10px Arial";
+                ctx.fillStyle="rgb(0,0,0)";
+                ctx.textAlign = 'center';
+                var scale = DQX.DrawUtil.getScaleJump(30/Math.abs(scaleY));
+                for (var i=Math.ceil(YMin/scale.Jump1); i<=Math.floor(YMax/scale.Jump1); i++) {
+                    var vl = i*scale.Jump1;
+                    var py = Math.round(vl * scaleY + offsetY)-0.5;
+                    ctx.strokeStyle = "rgb(230,230,230)";
+                    if (i%scale.JumpReduc==0)
+                        ctx.strokeStyle = "rgb(190,190,190)";
+                    ctx.beginPath();
+                    ctx.moveTo(marginX,py);
+                    ctx.lineTo(drawInfo.sizeX,py);
+                    ctx.stroke();
+                    if (i%scale.JumpReduc==0) {
+                        ctx.save();
+                        ctx.translate(marginX-5,py);
+                        ctx.rotate(-Math.PI/2);
+                        ctx.fillText(vl.toFixed(scale.textDecimalCount),0,0);
+                        ctx.restore();
+                    }
+                }
+                ctx.restore();
+
+                $.each(that.bucketCounts, function(bidx, val) {
+                    var x1 = (that.bucketNrOffset+bidx+0)*that.bucketSize;
+                    var x2 = (that.bucketNrOffset+bidx+1)*that.bucketSize;
+                    var px1 = Math.round(x1 * scaleX + offsetX);
+                    var px2 = Math.round(x2 * scaleX + offsetX);
+                    var py1 = Math.round(0 * scaleY + offsetY);
+                    var py2 = Math.round(val * scaleY + offsetY);
+                    ctx.beginPath();
+                    ctx.moveTo(px1, py2);
+                    ctx.lineTo(px1, py1);
+                    ctx.lineTo(px2, py1);
+                    ctx.lineTo(px2, py2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                });
+
 /*
                 var ctx = drawInfo.ctx;
                 if (!that.categories) {
