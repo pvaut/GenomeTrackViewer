@@ -109,7 +109,7 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
 
             that.fetchData = function() {
                 that.propidValue = that.ctrlValueProperty.getValue();
-
+                that.bucketCounts = null;
                 if (!that.propidValue)
                     return;
 
@@ -128,10 +128,18 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                         alert(resp.Error);
                         return;
                     }
+
+                    if (!resp.hasdata) {
+                        alert('No data in the result set');
+                        that.reDraw();
+                        return;
+                    }
+
                     var decoder = DataDecoders.ValueListDecoder();
                     var buckets = decoder.doDecode(resp.buckets);
                     var counts = decoder.doDecode(resp.counts);
                     that.bucketSize = resp.binsize;
+
 
                     var bucketMin = 1.0e99;
                     var bucketMax = -1.0e99;
@@ -254,13 +262,14 @@ define(["require", "DQX/base64", "DQX/Application", "DQX/DataDecoders", "DQX/Fra
                 }
                 ctx.restore();
 
+                ctx.fillStyle="rgb(190,190,190)";
                 $.each(that.bucketCounts, function(bidx, val) {
                     var x1 = (that.bucketNrOffset+bidx+0)*that.bucketSize;
                     var x2 = (that.bucketNrOffset+bidx+1)*that.bucketSize;
-                    var px1 = Math.round(x1 * scaleX + offsetX);
-                    var px2 = Math.round(x2 * scaleX + offsetX);
-                    var py1 = Math.round(0 * scaleY + offsetY);
-                    var py2 = Math.round(val * scaleY + offsetY);
+                    var px1 = Math.round(x1 * scaleX + offsetX)-0.5;
+                    var px2 = Math.round(x2 * scaleX + offsetX)-0.5;
+                    var py1 = Math.round(0 * scaleY + offsetY)-0.5;
+                    var py2 = Math.round(val * scaleY + offsetY)-0.5;
                     ctx.beginPath();
                     ctx.moveTo(px1, py2);
                     ctx.lineTo(px1, py1);

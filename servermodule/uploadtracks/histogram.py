@@ -29,11 +29,15 @@ def response(returndata):
         rs = cur.fetchone()
         minval = rs[0]
         maxval = rs[1]
+        if (minval is None) or (maxval is None):
+            returndata['hasdata']=False
+            return returndata
         binsize=(maxval-minval)/10.0
         if binsize<=0:
             binsize=1
 
 
+    returndata['hasdata']=True
     returndata['binsize'] = binsize
 
     buckets = []
